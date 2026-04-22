@@ -54,6 +54,14 @@ html, body {
 
 .reveal .slides section {
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 80px 60px 50px;
 }
 
 /* Background images fill slide fully */
@@ -187,10 +195,10 @@ html, body {
   background: #000;
   border: 3px solid var(--sw-primary);
   border-radius: 90px;
-  padding: 28px 70px;
+  padding: 40px 90px;
   text-align: center;
-  box-shadow: 0 0 40px rgba(0,191,255,0.6);
-  margin: 40px auto 24px auto;
+  box-shadow: 0 0 50px rgba(0,191,255,0.6);
+  margin: 0 auto 32px auto;
   display: inline-block;
   animation: titlePulse 3s ease-in-out infinite;
 }
@@ -199,22 +207,22 @@ html, body {
   50%       { box-shadow: 0 0 70px rgba(0,191,255,0.95); }
 }
 .reveal .title-pill h1 {
-  font-size: 3.6rem;
+  font-size: 5rem;
   font-weight: 900;
-  letter-spacing: 6px;
+  letter-spacing: 8px;
   margin: 0;
 }
 .reveal .title-dots {
-  margin-bottom: 10px;
-  font-size: 1.4rem;
-  letter-spacing: 12px;
+  margin-bottom: 14px;
+  font-size: 1.6rem;
+  letter-spacing: 16px;
   color: var(--sw-primary);
 }
 .reveal .title-subtitle {
   opacity: 0.85;
-  margin: 14px 0 30px 0;
-  letter-spacing: 1px;
-  font-size: 1rem;
+  margin: 18px 0 40px 0;
+  letter-spacing: 2px;
+  font-size: 1.2rem;
 }
 
 /* ----- Primary CTA button ----------------------------------------- */
@@ -223,8 +231,8 @@ html, body {
   color: #000;
   border: none;
   border-radius: 30px;
-  padding: 14px 36px;
-  font-size: 1.1rem;
+  padding: 18px 48px;
+  font-size: 1.25rem;
   font-weight: 900;
   letter-spacing: 2px;
   box-shadow: 0 6px 22px rgba(0,191,255,0.5);
@@ -284,7 +292,7 @@ html, body {
 .reveal .mission-card li { margin-bottom: 6px; }
 
 /* ----- Decision slides (portals) ---------------------------------- */
-.reveal .decision-title    { margin: 0 0 6px 0; font-size: 1.5rem; }
+.reveal .decision-title    { margin: 0 0 8px 0; font-size: 1.8rem; }
 .reveal .decision-subtitle { opacity: 0.8; margin-bottom: 18px; font-size: 0.9rem; letter-spacing: 1px; }
 
 .options-grid { display: grid; gap: 16px; max-width: 1250px; margin: 0 auto; }
@@ -541,4 +549,101 @@ html, body {
   .hud-brand    { font-size: 0.7rem; letter-spacing: 2px; }
   .hud-score    { font-size: 0.7rem; padding: 4px 10px; }
   .hud-help, .hud-fs { width: 26px; height: 26px; font-size: 0.75rem; }
+}
+
+
+/* ----- Slide-type padding overrides ------------------------------- */
+/* Decision slides are dense — reduce padding so cards have more room */
+.reveal section[data-step-type="decision"] {
+  padding: 70px 40px 30px;
+  justify-content: flex-start;
+}
+/* Title slide: center with generous spacing */
+.reveal section[data-step-type="title"] {
+  gap: 0;
+}
+/* Result slide: top-align for long content */
+.reveal section[data-step-type="result"] {
+  justify-content: flex-start;
+  padding-top: 80px;
+}
+
+
+/* ----- Title slide full-screen layout ----------------------------- */
+.title-layout {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  padding: 20px 60px 40px;
+}
+.title-top {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  justify-content: center;
+  gap: 28px;
+  padding-top: 20px;
+}
+.title-bottom {
+  width: 100%;
+  padding: 32px 0 0 0;
+  border-top: 1px solid rgba(0, 191, 255, 0.25);
+}
+.portal-preview {
+  display: flex;
+  justify-content: center;
+  gap: 80px;
+  margin-bottom: 20px;
+}
+.portal-pip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.portal-num {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 2px solid var(--sw-primary);
+  background: rgba(0, 191, 255, 0.08);
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: var(--sw-primary);
+  box-shadow: 0 0 14px rgba(0, 191, 255, 0.35);
+}
+.portal-lbl {
+  font-size: 0.75rem;
+  letter-spacing: 2px;
+  opacity: 0.65;
+  text-transform: uppercase;
+}
+.title-tagline {
+  font-family: var(--font-display);
+  letter-spacing: 4px;
+  font-size: 0.9rem;
+  opacity: 0.45;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+/* ----- Override specific slide paddings ---------------------------- */
+.reveal section[data-step-type="title"] {
+  padding: 70px 0 0 0;
+}
+.reveal section[data-step-type="decision"] {
+  justify-content: flex-start;
+  padding: 70px 50px 24px;
+}
+.reveal section[data-step-type="result"] {
+  justify-content: flex-start;
+  padding-top: 80px;
 }

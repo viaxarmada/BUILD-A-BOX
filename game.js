@@ -71,13 +71,25 @@ function renderStars(n) {
 function slideTitle(content) {
   const meta = content.game_meta;
   return `
-    <div class="title-pill">
-      <div class="title-dots">&bull; &bull; &bull; &bull; &bull; &bull;</div>
-      <h1>${esc(meta.title)}</h1>
-    </div>
-    <p class="title-subtitle">${esc(meta.subtitle)}</p>
-    <div class="btn-row">
-      <button class="primary-btn" data-action="start">&#9654; Start Game</button>
+    <div class="title-layout">
+      <div class="title-top auto-in" style="--delay:0.15s">
+        <div class="title-pill">
+          <div class="title-dots">&bull; &bull; &bull; &bull; &bull; &bull;</div>
+          <h1>${esc(meta.title)}</h1>
+        </div>
+        <p class="title-subtitle auto-in" style="--delay:0.6s">${esc(meta.subtitle)}</p>
+        <div class="btn-row auto-in" style="--delay:1.0s">
+          <button class="primary-btn" data-action="start">&#9654; Start Game</button>
+        </div>
+      </div>
+      <div class="title-bottom auto-in" style="--delay:1.4s">
+        <div class="portal-preview">
+          <div class="portal-pip"><span class="portal-num">1</span><span class="portal-lbl">Tray Style</span></div>
+          <div class="portal-pip"><span class="portal-num">2</span><span class="portal-lbl">Paper Type</span></div>
+          <div class="portal-pip"><span class="portal-num">3</span><span class="portal-lbl">Graphic</span></div>
+        </div>
+        <p class="title-tagline">3 portals. 1 perfect box.</p>
+      </div>
     </div>
   `;
 }
@@ -314,6 +326,12 @@ function buildDeck(content) {
   const bgMap = content.backgrounds || {};
   const defaultBg = (content.game_meta || {}).default_background || '';
 
+  // Also collect per-decision background_image fields (set in the PPT/admin Decisions tab)
+  const decisionBgMap = {};
+  for (const [dId, d] of Object.entries(content.decisions || {})) {
+    if (d.background_image) decisionBgMap[dId] = d.background_image;
+  }
+
   for (const step of content.flow) {
     const section = document.createElement('section');
     section.dataset.stepType  = step.type;
@@ -321,7 +339,7 @@ function buildDeck(content) {
     section.dataset.transition = transitionFor[step.type] || 'slide';
 
     // Background image — set as data-background-* attrs so Reveal handles rendering
-    const bgName = bgMap[step.id] || defaultBg;
+    const bgName = bgMap[step.id] || decisionBgMap[step.id] || defaultBg;
     if (bgName) {
       section.dataset.backgroundImage    = imgSrc(bgName);
       section.dataset.backgroundSize     = 'cover';
