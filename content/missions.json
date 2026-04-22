@@ -1,0 +1,248 @@
+{
+  "game_meta": {
+    "title": "BUILD-A-BOX",
+    "subtitle": "An experience created by Smurfit Westrock",
+    "brand_color_primary": "#00BFFF",
+    "brand_color_dark": "#0A1E3C",
+    "brand_color_bg": "#0F2B5C",
+    "brand_color_accent": "#FFD166",
+    "logo_image": "image1.png",
+    "default_background": ""
+  },
+  "flow": [
+    {
+      "type": "title",
+      "id": "title"
+    },
+    {
+      "type": "intro",
+      "id": "intro"
+    },
+    {
+      "type": "rules",
+      "id": "rules"
+    },
+    {
+      "type": "mission",
+      "id": "mission_monster_snacks"
+    },
+    {
+      "type": "ready",
+      "id": "ready"
+    },
+    {
+      "type": "decision",
+      "id": "tray_type"
+    },
+    {
+      "type": "decision",
+      "id": "paper_type"
+    },
+    {
+      "type": "decision",
+      "id": "graphic_element"
+    },
+    {
+      "type": "result",
+      "id": "result"
+    }
+  ],
+  "intro": {
+    "headline": "CONGRATULATIONS!",
+    "body": "YOU ARE IN CHARGE OF DESIGNING PACKAGING SOLUTIONS FOR SMURFIT WESTROCK CUSTOMERS.\n\nSELECT THE DESIGN FEATURES THAT BEST FULFILL THE ASSIGNED MISSION AND CREATE THE IDEAL SOLUTION TO STAND OUT AT THE POINT OF SALE."
+  },
+  "rules": {
+    "headline": "HOW TO PLAY",
+    "body": "The game consists of traveling through 3 different portals where you will get to choose the features for your packaging design.\n\nOnce you make your choice, the door will light up red, and you will be able to advance to the next level.",
+    "hero_image": "image5.png"
+  },
+  "missions": {
+    "mission_monster_snacks": {
+      "client": "Monster Snacks",
+      "stars": 3,
+      "logo_image": "image8.png",
+      "product_image": "image7.png",
+      "product_model": "model3d1.glb",
+      "brief_bullets": [
+        "Position their flagship snack (Cheese Flavor) in warehouse club store.",
+        "They need packaging that helps identify the product at the point of sale and adapts to the store format they want to enter.",
+        "Currently have no presence in club store."
+      ],
+      "summary": "Monster Snacks is a recognized brand in the market. Currently have no presence in club store.",
+      "call_to_action": "HELP MONSTER SNACKS TO HAVE A GREAT DEBUT. LET'S CREATE!"
+    }
+  },
+  "decisions": {
+    "tray_type": {
+      "portal_label": "ShelfSmart",
+      "portal_number": 1,
+      "title": "Choose your tray style",
+      "subtitle": "Which tray design best fits this mission?",
+      "background_image": "image11.jpeg",
+      "options": [
+        {
+          "id": "pallet_tray",
+          "number": 1,
+          "name": "Pallet Tray",
+          "model": "model3d5.glb",
+          "image": "image16.png",
+          "bullets": [
+            "Increased product visibility.",
+            "Limited communication area.",
+            "Requires additional inserts."
+          ],
+          "score": 2,
+          "is_recommended": false
+        },
+        {
+          "id": "single_sided_tray",
+          "number": 2,
+          "name": "Single-Sided Tray",
+          "model": "model3d6.glb",
+          "image": "image17.png",
+          "bullets": [
+            "Limited product visibility.",
+            "Larger area for printed communication.",
+            "No inserts required."
+          ],
+          "score": 1,
+          "is_recommended": false
+        },
+        {
+          "id": "corner_post_tray",
+          "number": 3,
+          "name": "Corner Post Tray",
+          "model": "model3d7.glb",
+          "image": "image18.png",
+          "bullets": [
+            "Good product visibility.",
+            "Good printed communication area.",
+            "No inserts required."
+          ],
+          "score": 3,
+          "is_recommended": true
+        }
+      ]
+    },
+    "paper_type": {
+      "portal_label": "ShelfSmart",
+      "portal_number": 2,
+      "title": "Choose your paper",
+      "subtitle": "Which substrate fits the brand and budget?",
+      "background_image": "image22.png",
+      "options": [
+        {
+          "id": "kraft_paper",
+          "number": 1,
+          "name": "Kraft Paper",
+          "model": "model3d9.glb",
+          "image": "image23.png",
+          "bullets": [
+            "Usually the most cost-effective option.",
+            "Appearance evokes sustainability.",
+            "When printed on, some colors can become dull or low-contrast."
+          ],
+          "score": 2,
+          "is_recommended": false
+        },
+        {
+          "id": "white_paper",
+          "number": 2,
+          "name": "White Paper",
+          "model": "model3d10.glb",
+          "image": "image24.png",
+          "bullets": [
+            "Usually requires more investment.",
+            "More accurate color tones.",
+            "Glossy finish paper available."
+          ],
+          "score": 3,
+          "is_recommended": true
+        }
+      ]
+    },
+    "graphic_element": {
+      "portal_label": "ShelfSmart",
+      "portal_number": 3,
+      "title": "Choose the primary graphic",
+      "subtitle": "What should dominate the printed face?",
+      "background_image": "image31.png",
+      "options": [
+        {
+          "id": "brand_logo",
+          "number": 1,
+          "name": "Brand's Logo",
+          "model": "model3d11.glb",
+          "image": "image32.png",
+          "bullets": [
+            "Identify products from the same family.",
+            "Differentiate brand from its competitors."
+          ],
+          "score": 3,
+          "is_recommended": true
+        },
+        {
+          "id": "product_characteristics",
+          "number": 2,
+          "name": "Product's Characteristics",
+          "model": "",
+          "image": "image33.png",
+          "bullets": [
+            "Guide the buyer to what it needs from the product.",
+            "Good support for new products in the market."
+          ],
+          "score": 2,
+          "is_recommended": false
+        },
+        {
+          "id": "key_differentiator",
+          "number": 3,
+          "name": "Key Differentiator / Slogan",
+          "model": "",
+          "image": "image35.png",
+          "bullets": [
+            "Highlight product's unique feature.",
+            "Connect with consumers with previous knowledge of the brand."
+          ],
+          "score": 2,
+          "is_recommended": false
+        }
+      ]
+    }
+  },
+  "result": {
+    "headline": "YOUR BOX IS READY!",
+    "body_template": "You designed a {tray_name} in {paper_name} featuring the {graphic_name} as the dominant graphic.",
+    "score_tiers": [
+      {
+        "min": 0,
+        "max": 5,
+        "label": "Solid first draft",
+        "message": "Great start \u2014 a few tweaks and this could really pop at shelf."
+      },
+      {
+        "min": 6,
+        "max": 7,
+        "label": "Strong design",
+        "message": "Nicely balanced for the mission. Monster Snacks will be noticed."
+      },
+      {
+        "min": 8,
+        "max": 9,
+        "label": "Shelf-stopper!",
+        "message": "Perfect fit for the club store format. Monster Snacks makes a great debut."
+      }
+    ]
+  },
+  "backgrounds": {
+    "title": "",
+    "intro": "",
+    "rules": "",
+    "mission_monster_snacks": "",
+    "ready": "",
+    "tray_type": "",
+    "paper_type": "",
+    "graphic_element": "",
+    "result": ""
+  }
+}

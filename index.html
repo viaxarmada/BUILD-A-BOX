@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>BUILD-A-BOX</title>
+
+    <!-- Reveal.js CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/black.css" rel="stylesheet" id="theme">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="game.css">
+
+    <!-- 3D model viewer -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer@3.5.0/dist/model-viewer.min.js"></script>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { 
+            width: 100%; 
+            height: 100%; 
+            overflow: hidden;
+            background: #000;
+        }
+        .reveal {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="reveal">
+        <div class="slides" id="slideContainer"></div>
+    </div>
+
+    <!-- HUD overlay -->
+    <div class="hud-overlay">
+        <div class="hud-left">
+            <span class="hud-brand"><span>🎮</span> BUILD-A-BOX</span>
+        </div>
+        <div class="hud-right">
+            <span class="hud-score" id="hudScore">Score: 0</span>
+            <button class="hud-fs" id="hudFsBtn" title="Toggle fullscreen (F)">⛶</button>
+            <button class="hud-help" id="hudHelpBtn" title="Keyboard shortcuts">?</button>
+        </div>
+    </div>
+
+    <!-- Help dialog -->
+    <dialog id="helpDialog" class="help-dialog">
+        <div class="help-content">
+            <h2>Keyboard Shortcuts</h2>
+            <table>
+                <tr><td><kbd>→</kbd> <kbd>Space</kbd></td><td>Next slide / next text</td></tr>
+                <tr><td><kbd>←</kbd></td><td>Previous slide</td></tr>
+                <tr><td><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd></td><td>Pick option on decision slide</td></tr>
+                <tr><td><kbd>F</kbd></td><td>Fullscreen</td></tr>
+                <tr><td><kbd>R</kbd></td><td>Restart game</td></tr>
+                <tr><td><kbd>Esc</kbd></td><td>Slide overview / exit fullscreen</td></tr>
+            </table>
+            <button id="helpCloseBtn">Close</button>
+        </div>
+    </dialog>
+
+    <script type="module" src="game.js"></script>
+</body>
+</html>
