@@ -1,184 +1,255 @@
-# Build-A-Box — online edition
+# BUILD-A-BOX
+**An interactive educational game for Smurfit Westrock**
 
-Streamlit port of the Smurfit Westrock **BUILD-A-BOX** PowerPoint game. Players walk through three packaging-design portals, pick options, and get a scored result. 3D models (`.glb`) from the original deck render live in the browser via Google's `<model-viewer>` web component.
+Converted from the original PowerPoint training deck into a self-contained web game with animation, music, procedural sound effects, and keyboard interaction.
 
-The app ships with a password-gated **Admin** page that lets a non-developer edit every piece of copy, swap images, upload new 3D models, reorder options, and tune the scoring — no JSON editing required.
-
----
-
-## Project layout
-
-```
-build_a_box/
-├── app.py                    # Player-facing game
-├── pages/
-│   └── 1_Admin.py            # Content editor (password-gated)
-├── game_state.py             # State machine + asset helpers
-├── ui.py                     # Theme CSS + model-viewer wrapper
-├── content/
-│   └── missions.json         # Single source of truth for the game
-├── assets/
-│   ├── images/               # PNGs / JPEGs / SVGs (extracted from the .pptx)
-│   └── models/               # GLB 3D models (extracted from the .pptx)
-├── .streamlit/
-│   ├── config.toml           # Dark arcade theme
-│   └── secrets.toml.example  # Copy → secrets.toml, set admin password
-├── requirements.txt
-└── README.md
-```
+**Live:** https://viaxarmada.github.io/BUILD-A-BOX/
 
 ---
 
-## Run locally
+## How to run
+
+The game is delivered as a folder build served over HTTP. The live deployment lives on GitHub Pages — see **Deploy to GitHub Pages** below.
+
+**Why a web server?** Modern browsers block `XHR`/`fetch` calls to `file://` URLs by default (CORS policy). Three.js's `GLTFLoader` uses XHR to load `.glb` model files. If you open `index.html` via double-click (file://), you'll see "GLB load failed" console warnings and the game will fall back to 2D for all 3D objects. The game still works, just without 3D rendering.
+
+**Local web server (any of these):**
 
 ```bash
-cd build_a_box
-python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-streamlit run app.py
+# Python (built-in)
+cd build-a-box
+python3 -m http.server 8080
+# Open http://localhost:8080 in Chrome
+
+# Node.js
+npx http-server -p 8080
+
+# VS Code: install "Live Server" extension, right-click index.html, "Open with Live Server"
 ```
 
-Open http://localhost:8501. The **Admin** page is in the sidebar. Default password is `admin` — change it via either `BUILD_A_BOX_ADMIN_PASSWORD` env var or `.streamlit/secrets.toml` before deploying.
+**Deploy to static hosting:** Upload the entire `build-a-box/` folder to any static host (S3, Netlify, Vercel, Cloudflare Pages, GitHub Pages, Azure Blob Storage, SharePoint, your own internal web server). Everything will work because the host serves over HTTP/HTTPS.
+
+No backend, no build step, no dependencies.
 
 ---
 
-## Deploy to Streamlit Community Cloud
+## Deploy to GitHub Pages
 
-1. Push the whole `build_a_box/` folder to a GitHub repo (private is fine).
-2. On [share.streamlit.io](https://share.streamlit.io), pick the repo and set the main file to `app.py`.
-3. In **Settings → Secrets**, paste:
-   ```toml
-   [admin]
-   password = "your-real-password-here"
+The repo is preconfigured to auto-deploy via GitHub Actions on every push to `main`. The workflow lives at `.github/workflows/deploy.yml` and uploads the entire repo root as the Pages artifact.
+
+**One-time setup (per repo):**
+
+1. Create a GitHub repo (public or private; private requires GitHub Pro/Team for Pages).
+2. Push this folder's contents to the repo root:
+   ```bash
+   cd build-a-box
+   git init
+   git add .
+   git commit -m "Initial BUILD-A-BOX commit"
+   git branch -M main
+   git remote add origin https://github.com/<your-username>/<repo-name>.git
+   git push -u origin main
    ```
-4. Deploy.
+3. In the repo on GitHub, go to **Settings → Pages**.
+4. Under **Build and deployment → Source**, select **GitHub Actions**.
+5. Push any commit to `main` (or trigger the workflow manually under the **Actions** tab → **Deploy to GitHub Pages** → **Run workflow**).
+6. After the action completes (~30–60 seconds), the site is live at:
+   ```
+   https://<your-username>.github.io/<repo-name>/
+   ```
 
-The `.glb` and image assets live in the repo alongside the code, so no external storage is needed for the starter deck.
+**Subsequent deploys:** just `git push`. The action redeploys automatically.
 
----
+**Why this works for the 3D models:** GitHub Pages serves over HTTPS, so the GLB fetches succeed (no `file://` CORS issue). All 3D models, level video backgrounds, and image assets stream from the host as the user plays.
 
-## Editing the game (no code)
-
-1. Open the deployed app, navigate to the **Admin** page, sign in.
-2. Pick the tab for the thing you want to change:
-   - **Meta** — title, brand colors
-   - **Intro & Rules** — the two onboarding screens
-   - **Missions** — client name, brief, hero 3D model
-   - **Decisions** — each portal's title and its options. Every option has: display number, name, bullets, score, recommended flag, image, 3D model. You can add/remove/reorder options.
-   - **Result** — result copy and score tiers
-   - **Flow** — the sequence of steps players walk through
-   - **Raw JSON** — export or reimport the whole config
-3. Click **Save** at the top to commit edits to `content/missions.json`.
-
-### Uploading a new 3D model
-
-On any option row in the **Decisions** tab, expand **Upload a new 3D model (.glb)** and pick a file. It's saved to `assets/models/` and appears in the dropdown. Export GLBs from Blender, SketchUp, Rhino, or whatever your team uses — any GLTF 2.0 binary.
-
-> Heads-up for Streamlit Community Cloud: the app's filesystem is **ephemeral**. Anything uploaded via the admin page survives until the container is recycled. For durable edits, either (a) download the JSON via **Export**, upload new assets to the repo, and redeploy, or (b) plug in cloud storage (S3 / GCS / Supabase) — see *Next steps* below.
+**Repo size note:** The folder is ~11 MB (4.4 MB GLBs + 4.5 MB MP4s + 1.8 MB images/JS + 110 KB HTML). GitHub's repo size soft-limit is 1 GB and per-file limit is 100 MB, so we're well under both.
 
 ---
 
-## How the code fits together
-
-- `content/missions.json` — the entire game as data. The app renders whatever is in this file.
-- `game_state.py` — loads that JSON into `st.session_state`, exposes the state machine (`advance`, `go_back`, `record_choice`, `compute_result`), and resolves asset paths.
-- `ui.py` — CSS theme plus two rendering helpers: `render_image` and `render_model`. The model helper embeds `<model-viewer>` from a CDN and inlines the GLB as a data URI so Streamlit's static serving isn't in the loop.
-- `app.py` — player experience. Dispatches on the current step's type (`title`, `intro`, `rules`, `mission`, `ready`, `decision`, `result`) to a matching render function.
-- `pages/1_Admin.py` — thin UI over the same JSON structure. Every widget is bound to a key in the draft dict; **Save** writes the draft back to disk.
-
----
-
-## Known trade-offs vs. the original PowerPoint
-
-| Feature | PPTX | This version |
-|---|---|---|
-| 3D models rotating on pedestals | Yes (native) | Yes (`<model-viewer>`) |
-| Portal/door light-up animation | Yes (PPT entrance effects) | Replaced by a "reveal recommended" visual hint after choice |
-| Keyboard 1/2/3 to pick | Custom VBA | Click buttons (can add keyboard via `streamlit-shortcuts` if needed) |
-| Character/scene backgrounds | Painted illustrations | Extracted as images and usable via background_image field |
-| Offline playback | Yes | No (needs browser + network for `<model-viewer>` CDN) |
-
----
-
-## Next steps (if you want to go further)
-
-- **Persistent cloud storage** for admin edits: swap `save_content()` / uploads to write to Supabase Storage or S3 instead of the local filesystem.
-- **Multiple missions**: the data model already supports them — add mission records to `missions.json`, and add a mission picker to the title screen.
-- **Leaderboards / player analytics**: add a lightweight backend (Supabase or Firestore). Log `choices` + `total score` at the result step.
-- **Keyboard shortcuts**: install `streamlit-shortcuts` and wire 1/2/3 to the option buttons on decision steps.
-- **Better 3D staging**: the `<model-viewer>` wrapper in `ui.py` accepts props — drop in environment HDRIs, shadows, or exposure tweaks per model without touching app code.
-
----
-
-## The Reveal.js player (recommended for audiences)
-
-`index.html`, `game.js`, `game.css`, and `.nojekyll` together form a static, browser-based version of the same game. It reads the same `content/missions.json` the Streamlit admin edits. This version has real slide transitions, 3D models rotating on pedestals, keyboard-driven option picking (1/2/3), fullscreen support, and none of Streamlit's re-run-the-script interaction overhead.
-
-### Deploy to GitHub Pages
-
-1. Make sure the whole folder (including `index.html` and the `.nojekyll` file) is pushed to a GitHub repo.
-2. Repo → **Settings → Pages → Build and deployment**.
-3. Source: **Deploy from a branch**. Branch: **main**, folder: **/ (root)**. Save.
-4. Wait ~60 seconds. The game lives at `https://YOUR-USERNAME.github.io/REPO-NAME/`.
-
-That's it. No build step, no secrets, no config. GitHub serves the HTML, the browser fetches `missions.json` + images + GLBs over HTTPS, and Reveal.js + `<model-viewer>` come from the jsdelivr CDN.
-
-### Local preview
-
-The files need to be served over HTTP (not opened as `file://`) because the game fetches JSON at runtime:
-
-```bash
-cd build_a_box
-python3 -m http.server 8000
-# open http://localhost:8000
-```
-
-### Keyboard shortcuts
+## Keyboard controls
 
 | Key | Action |
-|---|---|
-| → / Space / N | Next slide or next fragment |
-| ← / P | Previous |
-| 1 / 2 / 3 | Pick option on a decision slide |
-| F | Fullscreen |
-| R | Restart game |
-| Esc | Overview / exit fullscreen |
-| ? button (top right) | Show shortcuts help |
+|-----|--------|
+| `Enter` / `Space` | Advance, confirm, or select focused option |
+| `→` / `↓` | Move focus to next option (in level scenes) |
+| `←` / `↑` | Move focus to previous option |
+| `1` `2` `3` | Directly select option 1, 2, or 3 |
+| `M` | Toggle sound on/off |
 
-### Sync between admin (Streamlit) and player (GitHub Pages)
+Mouse and touch also work throughout — hover or click any element.
 
-The two apps read the same `content/missions.json`, but **they read it from different places**: the Streamlit admin reads/writes the file on its own (ephemeral) container filesystem, while the GitHub Pages player reads from the repo. So admin edits on Streamlit Cloud do NOT automatically appear on Pages.
+---
 
-For now, the workflow for permanent content changes is:
+## Game flow
 
-1. Make edits in the Streamlit admin.
-2. Click **Export JSON** to download the updated `missions.json`.
-3. Commit the updated file to the GitHub repo (replace `content/missions.json`).
-4. GitHub Pages auto-rebuilds within a minute; players see the new version.
+1. **Title** — BUILD-A-BOX splash screen with START GAME
+2. **Intro** — Congratulations / you're designing packaging for Smurfit Westrock
+3. **Rules** — The 3-portal game mechanic is explained
+4. **Mission** — Overview of your role
+5. **Client brief** — Monster Snacks (cheese flavor) wants to enter warehouse club stores
+6. **Lets Create!** — Ready to start designing
+7. **Level 1 — Factory (ShelfSmart):** Pick a tray type
+   - Pallet Tray / Single-Sided Tray / **Corner Post Tray** (best fit)
+8. **Level 2 — Warehouse:** Pick a paper type
+   - Kraft Paper / **White Paper** (best fit)
+9. **Level 3 — Store:** Pick a communication focus
+   - **Brand's Logo** (best fit) / Product Characteristics / Slogan
+10. **Finale** — Score (X/9), rank, and per-level breakdown
 
-If this becomes painful, the proper fix is swapping `save_content()` in `game_state.py` to commit via the GitHub API (requires a PAT in Streamlit Cloud's Secrets). Happy to build that if you want it.
+After each level, a feedback overlay explains the trade-offs of **all** options (not just the winner) so the player learns the reasoning behind the best fit for Monster Snacks' specific situation.
 
-### What might go wrong on first deploy
+---
 
-- **Page is blank, console shows 404 on `missions.json`**: the `.nojekyll` file is missing or wasn't pushed. Without it, GitHub Pages runs Jekyll, which mangles some paths. Re-check the repo has `.nojekyll` at the root.
-- **3D models don't show, only flat boxes**: the `.glb` files didn't upload. Check `assets/models/` in the repo has all 11 `.glb` files.
-- **Page loads but the boot "Loading game content..." never goes away**: open DevTools → Console. Usually a fetch error for `missions.json` (check the file exists at `content/missions.json`) or a CSP blocking the CDN.
-- **Models show, but they're the wrong ones for each option**: the starter mapping in `missions.json` is a best guess. Open the Streamlit admin's **Decisions** tab, pick the right GLB for each option from the dropdown (each has a live preview), export, recommit.
+## Scoring
 
-### Browser support
+Each level awards 1–3 points:
+- **3 points** — Best fit for this client scenario
+- **2 points** — Strong choice with trade-offs
+- **1 point** — Works, but not optimal
 
-Tested on Chromium (Chrome, Edge, Brave). Firefox 98+ and Safari 15.4+ also support `<model-viewer>` and ES modules natively. IE is not supported (neither is Reveal.js 5.x).
+Total: **9 points maximum**.
 
-### v2 player improvements (April 2026)
+| Score | Rank |
+|-------|------|
+| 8–9 | 🏆 Master Packaging Designer |
+| 6–7 | ⭐ Skilled Designer |
+| 4–5 | ✨ Emerging Designer |
+| <4 | Keep Exploring |
 
-**Auto-animate text**
-Slides now animate their content in automatically — no need to click or press Arrow-right to reveal bullet points. Elements fade in with a staggered delay (about 0.15–0.2s per item). Navigate away and back to see the animation replay.
+All choices advance the game — nothing blocks progression. The goal is learning, not gotcha.
 
-**Backgrounds**
-Each slide can have its own background image. Edit them from the **Admin → Backgrounds** tab. If a slide has no background set, it falls back to the **Default background** (also in that tab), or to the arcade gradient if no default is set either. Backgrounds are automatically dimmed by a subtle overlay so text stays legible on busy images.
+---
 
-**Fullscreen + responsive scaling**
-The canvas is now 1920×1080 (16:9). Reveal.js scales that canvas proportionally to whatever viewport the player is on — full-size on a 1920×1080 monitor, scaled-up on 4K, scaled-down on mobile. Click the ⛶ button in the top-right HUD (or press F) to go true fullscreen.
+## Sound design
 
-**Admin: uploading backgrounds**
-Go to Admin → Backgrounds. Either pick an existing image from the dropdown, or use the "Upload a new image" expander to add one. Save the JSON, export it, commit to the repo. The Reveal.js player picks it up on the next page load.
+- **Background music** — Looping 8-bit chiptune track (`assets/bgm.ogg` with `assets/bgm.m4a` Safari fallback) that fades in after the title screen.
+- **Click / hover** — Short beeps and chirps for UI feedback (procedural, Web Audio API)
+- **Select / confirm** — Ascending triangle-wave chime when a choice is locked in (procedural)
+- **Whoosh** — Filtered noise sweep during scene transitions (procedural)
+- **Fanfare** — Celebratory arpeggio on the finale scene (procedural)
+
+Press `M` or click the `🔊 SOUND` button at top-right to mute at any time.
+
+---
+
+## Developer / Facilitator URL parameters
+
+For demos, training sessions, or QA, you can skip directly to any scene:
+
+| URL | Jumps to |
+|-----|----------|
+| `index.html?jump=scene-title` | Title |
+| `index.html?jump=scene-level1` | Level 1 (factory / tray selection) |
+| `index.html?jump=scene-level2` | Level 2 (warehouse / paper selection) |
+| `index.html?jump=scene-level3` | Level 3 (store / communication selection) |
+| `index.html?jump=scene-finale` | Finale |
+
+Add `?noanim` to disable CSS animations (useful for screenshots). `?jump=` implies `?noanim`.
+
+---
+
+## File structure
+
+```
+build-a-box/
+├── index.html           # Entire game — logic, layout, styles, sound, 3D
+├── README.md            # This file
+├── assets/              # 2D images, audio, and Three.js library
+│   ├── three.min.js     # Vendored Three.js r128 for offline use
+│   ├── GLTFLoader.js    # GLB model loader
+│   ├── bgm.ogg          # Background music (Ogg Vorbis)
+│   ├── bgm.m4a          # Background music (AAC fallback for Safari)
+│   ├── scene-*.jpg      # Background images
+│   ├── scene-*.mp4      # Looping per-level background videos
+│   ├── door-*.png       # 2D fallback portal doors
+│   ├── tray-*.png       # 2D fallback trays
+│   ├── paper-*.png      # 2D fallback paper rolls
+│   ├── bag-monster.png  # 2D fallback Monster Snacks bag
+│   └── (other 2D assets)
+└── models/              # GLB 3D models
+    ├── Bag_of_chip.glb           # Monster Snacks bag (used on Let's Create scene)
+    ├── Pedestal.glb              # Pedestal/turntable shown under the bag
+    ├── Pallet_Tray.glb           # Level 1 option 1
+    ├── Single_sided_tray.glb     # Level 1 option 2
+    ├── Post_Tray.glb             # Level 1 option 3 (Corner Post)
+    ├── Kraft_Roll_of_Paper.glb   # Level 2 option 1
+    ├── White_Roll_of_Paper.glb   # Level 2 option 2
+    ├── Door1.glb, Door2.glb, Door3.glb   # Portal doors (yellow/red/green)
+    └── Final_Door.glb            # Rules-scene door with built-in open animation
+```
+
+---
+
+## 3D model rendering
+
+The game uses **Three.js (r128)** with **GLTFLoader** to render `.glb` 3D models with real perspective, lighting, and rotation. Models are loaded from the `/models` folder when their scene becomes active and are cleaned up when the scene exits to free GPU memory.
+
+**3D models in use:**
+- **Rules scene:** `Final_Door.glb` — the red advance door with built-in left+right open animations that play when clicked
+- **Let's Create scene:** `Bag_of_chip.glb` (rotating Monster Snacks bag) on `Pedestal.glb` (3D turntable)
+- **Portal selection scene:** Three doors mapped to slot colors:
+  - Slot 1 (yellow visual) → `Door3.glb`
+  - Slot 2 (red visual) → `Door1.glb`
+  - Slot 3 (green visual) → `Door2.glb`
+  - Each door has 4 baked open animations; one fires when the door is chosen
+- **Level 1 (Factory):** `Pallet_Tray.glb`, `Single_sided_tray.glb`, `Post_Tray.glb` — all rotating
+- **Level 2 (Warehouse):** `Kraft_Roll_of_Paper.glb`, `White_Roll_of_Paper.glb` — both rotating
+
+**Lighting:** Each 3D scene uses ambient + directional key + directional fill + cyan rim lighting to match the game's neon aesthetic.
+
+**Lifecycle management:** A `_3DInstances` Map tracks all active 3D contexts. When a scene exits, `cleanup3DScene(prefix)` disposes geometries, materials, textures, and renderers for that scene's models — preventing GPU memory accumulation.
+
+**Graceful fallback chain:**
+1. Try to load `assets/three.min.js` locally → if missing, load from cdnjs CDN
+2. Try to load `assets/GLTFLoader.js` locally → if missing, load from cdnjs CDN
+3. If WebGL is unavailable in the browser, show 2D PNG fallbacks
+4. If a specific `.glb` fails to load, show that asset's 2D PNG fallback
+
+Players never see a broken state regardless of network conditions or browser capabilities.
+
+---
+
+## Browser support
+
+Tested design patterns work in:
+- Chrome / Edge 90+
+- Firefox 88+
+- Safari 14+
+
+Requirements:
+- ES2020 JavaScript (supported by all major browsers from 2020 onward)
+- CSS `aspect-ratio`, `clamp()`, `backdrop-filter`
+- Web Audio API (standard)
+
+No polyfills needed for any modern browser.
+
+---
+
+## Accessibility notes
+
+- All interactive elements are reachable by keyboard
+- Focus outlines visible on buttons and options
+- `prefers-reduced-motion` honored — animations shortened for users who request it
+- High-contrast yellow/cyan/white text on dark backgrounds
+- ARIA labels on icon-only buttons
+- Score/feedback announced via live region semantics
+
+---
+
+## Credits
+
+- Original content & artwork: Smurfit Westrock Ignite — BUILD-A-BOX
+- Converted to interactive web game: April 2026
+- Sound effects: Web Audio API (procedural)
+- Background music: 8-bit chiptune loop
+
+---
+
+## Questions?
+
+The game is a single HTML file plus assets — easy to modify. Common tweaks:
+
+- **Change the correct answer for a level:** Edit `LEVEL_DATA` in `index.html` (search for `LEVEL_DATA`). Adjust `best` and the per-option `score` values.
+- **Edit option explanations:** Same `LEVEL_DATA` object — change the `reasoning` HTML string.
+- **Change the client scenario:** Edit the text in `#scene-client` inside `index.html`.
+- **Adjust scoring thresholds:** Edit the `rank` logic in `renderFinale()` near the bottom of the script.

@@ -1,67 +1,3484 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>BUILD-A-BOX</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<title>BUILD-A-BOX · Smurfit Westrock</title>
+<link rel="preload" as="image" href="assets/scene-factory.jpg" />
+<script>
+// Three.js + GLTFLoader: try local vendor copy first, fall back to CDN.
+(function loadThreeStack() {
+  function load(src, onload, onerror) {
+    const s = document.createElement('script');
+    s.src = src;
+    s.async = false;
+    if (onload) s.onload = onload;
+    if (onerror) s.onerror = onerror;
+    document.head.appendChild(s);
+  }
+  function loadGLTF() {
+    load('assets/GLTFLoader.js', null, () => {
+      // jsDelivr mirrors the full npm package including examples/js/loaders/
+      load('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js', null, () => {
+        // unpkg fallback
+        load('https://unpkg.com/three@0.128.0/examples/js/loaders/GLTFLoader.js', null, () => {
+          console.warn('GLTFLoader failed to load from all sources; 3D models will fall back to 2D images');
+        });
+      });
+    });
+  }
+  load('assets/three.min.js', loadGLTF, () => {
+    load('https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js', loadGLTF, () => {
+      // jsDelivr fallback for three.js itself
+      load('https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js', loadGLTF, () => {
+        console.warn('Three.js failed to load from all sources; falling back to 2D');
+      });
+    });
+  });
+})();
+</script>
+<style>
+/* ========================================================================
+   BUILD-A-BOX · Interactive educational game
+   Packaging design training for Smurfit Westrock
+   ========================================================================*/
+:root {
+  --bg-deep: #031529;
+  --bg-mid: #0a2a4d;
+  --bg-light: #1a4d80;
+  --cyan: #2FD3FF;
+  --cyan-soft: #7AE8FF;
+  --cyan-glow: rgba(47, 211, 255, 0.65);
+  --yellow: #FFD23F;
+  --amber: #F9A825;
+  --red-light: #FF2B2B;
+  --text: #FFFFFF;
+  --text-muted: #B8D4E8;
+  --ink: #0B1E3A;
+  --shadow-deep: 0 20px 60px rgba(0, 0, 0, 0.45);
+}
 
-    <!-- Reveal.js CDN -->
-    <link href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/black.css" rel="stylesheet" id="theme">
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="game.css">
+html, body {
+  height: 100%;
+  overflow: hidden;
+  font-family: 'Rajdhani', 'Segoe UI', system-ui, sans-serif;
+  background: radial-gradient(ellipse at center, #062542 0%, #010812 100%);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+  touch-action: none;
+}
 
-    <!-- 3D model viewer -->
-    <script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer@3.5.0/dist/model-viewer.min.js"></script>
+body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        html, body { 
-            width: 100%; 
-            height: 100%; 
-            overflow: hidden;
-            background: #000;
-        }
-        .reveal {
-            width: 100%;
-            height: 100%;
-        }
-    </style>
+/* ===== Stage: fixed 1600x900 design canvas, scaled to fit viewport ===== */
+/* The stage is rendered at exactly 1600x900 px so all internal positioning works
+   the same on every device. A wrapper scales it to fit the viewport while
+   preserving aspect ratio. This guarantees no content gets cut off regardless
+   of screen size — phone, tablet, desktop, or projector. */
+#stage-wrapper {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(ellipse at center, #062542 0%, #010812 100%);
+  overflow: hidden;
+}
+#stage {
+  position: relative;
+  width: 1600px;
+  height: 900px;
+  flex-shrink: 0;
+  transform-origin: center center;
+  background:
+    radial-gradient(ellipse at 20% 30%, #1a4d80 0%, transparent 45%),
+    radial-gradient(ellipse at 80% 70%, #2a1a80 0%, transparent 50%),
+    linear-gradient(180deg, #031529 0%, #0a2a4d 100%);
+  overflow: hidden;
+  box-shadow: var(--shadow-deep);
+  animation: bgShift 20s ease-in-out infinite;
+}
+
+/* ===== Inner safe-area frame: 50px from each edge, holds all scene content ===== */
+.scene-safe-area {
+  position: absolute;
+  top: 80px;     /* leave room for toolbar (top:14, ~36px) + 30px margin */
+  left: 50px;
+  right: 50px;
+  bottom: 70px;  /* leave room for ignite logo + kb-hint at bottom */
+  pointer-events: none; /* so children can opt-in */
+}
+
+@keyframes bgShift {
+  0%, 100% { filter: hue-rotate(0deg) brightness(1); }
+  50%      { filter: hue-rotate(-8deg) brightness(1.05); }
+}
+
+/* ===== Header pill (LOADING / MISSION / etc.) ===== */
+.header-pill {
+  position: absolute;
+  top: 2%;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 22px;
+  background: radial-gradient(ellipse at center, #0a0a0a 0%, #000 100%);
+  border: 1.5px solid var(--cyan);
+  border-radius: 999px;
+  box-shadow:
+    0 0 14px var(--cyan-glow),
+    inset 0 0 10px rgba(47, 211, 255, 0.15);
+  z-index: 60;
+  min-width: 16%;
+  max-width: 50vw;
+  justify-content: center;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  font-size: clamp(15px, 1.65vw, 21px);
+  white-space: nowrap;
+}
+.header-pill::before, .header-pill::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 30vw;
+  height: 1.5px;
+  background: linear-gradient(90deg, transparent, var(--cyan) 60%);
+  box-shadow: 0 0 6px var(--cyan-glow);
+  pointer-events: none;
+}
+.header-pill::before { right: 100%; background: linear-gradient(90deg, transparent, var(--cyan) 60%); }
+.header-pill::after  { left: 100%;  background: linear-gradient(90deg, var(--cyan) 40%, transparent); }
+
+.header-pill .icon { font-size: 1.35em; }
+.header-pill .dots {
+  display: inline-block;
+  letter-spacing: 4px;
+  color: var(--cyan);
+  text-shadow: 0 0 6px var(--cyan-glow);
+  min-width: 3.5em;
+  animation: dots 1.4s steps(4, end) infinite;
+}
+@keyframes dots {
+  0%   { content: '·'; }
+  25%  { content: '· ·'; }
+  50%  { content: '· · ·'; }
+  100% { content: '· · · ·'; }
+}
+.header-pill .dots::before {
+  content: '· · · ·';
+  animation: dotsFlicker 1.4s infinite;
+}
+@keyframes dotsFlicker {
+  0%, 100% { opacity: 1; }
+  25% { opacity: 0.3; }
+  50% { opacity: 0.6; }
+  75% { opacity: 0.9; }
+}
+
+/* ===== Scenes ===== */
+.scene {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.55s ease;
+}
+.scene.active {
+  opacity: 1;
+  pointer-events: auto;
+  z-index: 20;
+}
+.scene.fading-out {
+  transition: opacity 0.35s ease;
+  opacity: 0;
+}
+
+/* ===== Ignite watermark ===== */
+.ignite-mark {
+  position: absolute;
+  left: 1.5%;
+  bottom: 1.5%;
+  width: 8%;
+  opacity: 0.85;
+  z-index: 40;
+  pointer-events: none;
+}
+
+/* ===== TITLE SCENE ===== */
+.title-logo {
+  background: #000;
+  border: 3px solid var(--cyan);
+  border-radius: 999px;
+  padding: clamp(14px, 2.5vw, 30px) clamp(40px, 6vw, 80px);
+  box-shadow:
+    0 0 40px var(--cyan-glow),
+    inset 0 0 30px rgba(47, 211, 255, 0.2);
+  position: relative;
+  margin-bottom: 1.5vw;
+}
+.title-logo h1 {
+  font-size: clamp(54px, 10.5vw, 144px);
+  font-weight: 900;
+  letter-spacing: 0.03em;
+  color: #fff;
+  line-height: 1;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+.title-logo .dotrow {
+  position: absolute;
+  top: 10%;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+}
+.title-logo .dotrow span {
+  width: 10px; height: 10px; border-radius: 50%;
+  animation: dotPulse 2.4s ease-in-out infinite;
+}
+.title-logo .dotrow span:nth-child(1) { background: #3BE06B; animation-delay: 0s; }
+.title-logo .dotrow span:nth-child(2) { background: #FFD23F; animation-delay: 0.2s; }
+.title-logo .dotrow span:nth-child(3) { background: #F5A623; animation-delay: 0.4s; }
+.title-logo .dotrow span:nth-child(4) { background: #FF3E3E; animation-delay: 0.6s; }
+.title-logo .dotrow span:nth-child(5) { background: #2FD3FF; animation-delay: 0.8s; }
+.title-logo .dotrow span:nth-child(6) { background: #9B59FF; animation-delay: 1.0s; }
+@keyframes dotPulse {
+  0%, 100% { transform: scale(1); opacity: 0.85; }
+  50%      { transform: scale(1.3); opacity: 1; box-shadow: 0 0 10px currentColor; }
+}
+.title-byline {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: clamp(18px, 2.1vw, 27px);
+  color: var(--text-muted);
+  margin-bottom: 4vw;
+}
+.title-byline img { height: clamp(18px, 2vw, 26px); }
+
+.play-button {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  cursor: pointer;
+  padding: 14px 20px;
+  border-radius: 999px;
+  transition: transform 0.2s ease, filter 0.2s ease;
+  background: transparent;
+  border: none;
+  color: inherit;
+  font-family: inherit;
+}
+.play-button:hover, .play-button:focus-visible { transform: scale(1.04); filter: brightness(1.15); outline: none; }
+.play-icon {
+  width: clamp(56px, 7vw, 96px);
+  height: clamp(56px, 7vw, 96px);
+  border-radius: 50%;
+  border: 4px solid var(--cyan);
+  background: var(--bg-mid);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 30px var(--cyan-glow);
+  animation: playPulse 2s ease-in-out infinite;
+}
+.play-icon svg { width: 40%; height: 40%; fill: var(--cyan); margin-left: 10%; }
+@keyframes playPulse {
+  0%, 100% { box-shadow: 0 0 25px var(--cyan-glow); }
+  50%      { box-shadow: 0 0 45px var(--cyan-glow), 0 0 80px rgba(47, 211, 255, 0.25); }
+}
+.play-label {
+  font-size: clamp(33px, 4.5vw, 60px);
+  letter-spacing: 0.15em;
+  font-weight: 300;
+}
+
+/* ===== Generic full-screen body text scenes ===== */
+.scene-body {
+  padding: clamp(60px, 8vw, 100px) clamp(40px, 6vw, 100px) 6vw;
+  text-align: center;
+}
+.scene-body h2 {
+  font-style: italic;
+  font-size: clamp(33px, 5.4vw, 72px);
+  color: var(--cyan-soft);
+  text-shadow: 0 0 16px var(--cyan-glow);
+  margin-bottom: 14px;
+  letter-spacing: 0.04em;
+  font-weight: 800;
+  max-width: 90%;
+  margin-left: auto;
+  margin-right: auto;
+}
+.scene-body p {
+  font-size: clamp(18px, 2.4vw, 28.5px);
+  line-height: 1.5;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  max-width: 80%;
+  margin: 0 auto 12px;
+}
+.scene-body .lede { margin-bottom: 1.4vw; }
+
+/* ===== Arrow button (NEXT / MISSION / Next) ===== */
+.arrow-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  min-width: clamp(120px, 14vw, 200px);
+  height: clamp(44px, 5vw, 68px);
+  padding: 0 clamp(20px, 3vw, 40px) 0 clamp(14px, 2vw, 26px);
+  margin-top: clamp(20px, 3vw, 40px);
+  background: linear-gradient(180deg, #6AB3F0 0%, #2FA1E8 100%);
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  font-size: clamp(21px, 2.55vw, 33px);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+  clip-path: polygon(0% 0%, 80% 0%, 100% 50%, 80% 100%, 0% 100%);
+  text-transform: uppercase;
+  transition: transform 0.15s, filter 0.15s;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+}
+.arrow-btn:hover, .arrow-btn:focus-visible { transform: scale(1.04); filter: brightness(1.15); outline: none; }
+.arrow-btn:active { transform: scale(0.98); }
+.arrow-btn.pink { background: linear-gradient(180deg, #E85FCC 0%, #A83EB0 100%); }
+
+/* ===== Rules scene: door mockup ===== */
+.door-frame {
+  position: relative;
+  width: clamp(200px, 28vw, 380px);
+  margin: 2vw auto 0;
+  filter: drop-shadow(0 10px 30px rgba(0,0,0,0.4));
+}
+.door-frame img { width: 100%; display: block; }
+
+/* ===== Client scene ===== */
+.scene-client {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2vw;
+  padding: 12vh 8vw 6vh;
+  align-items: center;
+}
+.client-bag {
+  width: 56%;
+  max-width: 240px;
+  margin-left: auto;
+  margin-right: 4vw;
+  filter: drop-shadow(0 16px 24px rgba(0,0,0,0.5));
+  transform-style: preserve-3d;
+  perspective: 1200px;
+}
+#scene-client.active .client-bag.seq-left {
+  animation:
+    seqSlideLeft 0.8s cubic-bezier(0.17, 0.88, 0.32, 1.28) both,
+    bagRock 4s ease-in-out 1.2s infinite;
+}
+@keyframes bagRock {
+  /* Rock between -25 and +25 degrees so we never see the back */
+  0%, 100% { transform: perspective(1200px) rotateY(-25deg) translateY(0); }
+  25%      { transform: perspective(1200px) rotateY(0deg)   translateY(-8px); }
+  50%      { transform: perspective(1200px) rotateY(25deg)  translateY(0); }
+  75%      { transform: perspective(1200px) rotateY(0deg)   translateY(-8px); }
+}
+.client-card {
+  position: relative;
+  /* Paper-like background with subtle grain */
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.4) 0%, transparent 30%),
+    repeating-linear-gradient(
+      0deg,
+      rgba(200, 180, 140, 0.06) 0px,
+      rgba(200, 180, 140, 0.06) 1px,
+      transparent 1px,
+      transparent 3px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      rgba(180, 160, 120, 0.04) 0px,
+      rgba(180, 160, 120, 0.04) 1px,
+      transparent 1px,
+      transparent 4px
+    ),
+    linear-gradient(180deg, #FAF5E8 0%, #F3EBD5 100%);
+  width: 85%;
+  max-width: 420px;
+  padding: 6.5% 7% 5.5%;
+  transform: rotate(2deg);
+  box-shadow:
+    0 14px 30px rgba(0, 0, 0, 0.45),
+    0 4px 10px rgba(0, 0, 0, 0.25),
+    inset 0 0 40px rgba(200, 170, 120, 0.08);
+  color: var(--ink);
+  opacity: 0;
+  border-radius: 2px;
+  /* Subtle curl at top-right corner */
+  clip-path: polygon(
+    0 0.5%, 100% 0, 100% 99.5%, 0.5% 100%
+  );
+}
+/* Soft shadow under the paper (depth) */
+.client-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 2px;
+  pointer-events: none;
+  /* Slight edge darkening for realism */
+  box-shadow:
+    inset 0 0 60px rgba(0, 0, 0, 0.05),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.04);
+}
+#scene-client.active .client-card {
+  animation: cardDrop 0.8s cubic-bezier(0.17, 0.88, 0.32, 1.28) 0.4s both;
+}
+@keyframes cardDrop {
+  0%   { transform: translateY(-120%) rotate(-8deg); opacity: 0; }
+  70%  { transform: translateY(4%) rotate(3deg); opacity: 1; }
+  100% { transform: translateY(0) rotate(2deg); opacity: 1; }
+}
+.client-card::before {
+  content: '';
+  position: absolute;
+  top: -22px;
+  left: 50%;
+  transform: translateX(-50%) rotate(-4deg);
+  width: 36%;
+  height: 34px;
+  background:
+    linear-gradient(90deg,
+      rgba(215, 195, 140, 0.85) 0%,
+      rgba(230, 210, 160, 0.92) 15%,
+      rgba(220, 200, 150, 0.88) 50%,
+      rgba(230, 210, 160, 0.92) 85%,
+      rgba(215, 195, 140, 0.85) 100%
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0px,
+      transparent 3px,
+      rgba(170, 150, 100, 0.15) 3px,
+      rgba(170, 150, 100, 0.15) 4px
+    );
+  box-shadow:
+    0 3px 6px rgba(0, 0, 0, 0.2),
+    inset 0 0 12px rgba(150, 125, 75, 0.2);
+  /* Torn/uneven edges */
+  clip-path: polygon(
+    2% 15%, 8% 0%, 18% 12%, 28% 3%, 40% 10%, 55% 2%, 68% 12%, 82% 5%, 92% 15%, 98% 8%,
+    98% 85%, 92% 100%, 82% 88%, 68% 98%, 55% 90%, 40% 97%, 28% 88%, 18% 96%, 8% 85%, 2% 94%
+  );
+}
+.client-card h3 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: clamp(21px, 2.7vw, 33px);
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.client-card .brand-logo { height: clamp(30px, 4vw, 50px); }
+.client-stars { color: #2A6FD6; font-size: clamp(21px, 2.4vw, 30px); letter-spacing: 4px; margin-bottom: 10px; }
+.client-card p { font-size: clamp(16.5px, 1.95vw, 24px); line-height: 1.5; margin-bottom: 8px; }
+.client-card .hl { color: #2A6FD6; font-weight: 600; }
+.client-card ul { list-style: none; padding: 0; margin-top: 10px; }
+.client-card ul li {
+  font-size: clamp(15px, 1.8vw, 22.5px);
+  line-height: 1.4;
+  padding-left: 20px;
+  position: relative;
+  margin-bottom: 8px;
+}
+.client-card ul li::before {
+  content: '▢';
+  position: absolute;
+  left: 0;
+  color: #2A6FD6;
+}
+
+/* ===== Let's Create scene ===== */
+.scene-create {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  padding: 14vh 6vw 6vh;
+  align-items: center;
+  gap: 2vw;
+}
+.create-text { text-align: center; }
+.create-text .line1 {
+  font-size: clamp(30px, 5.1vw, 69px);
+  font-weight: 800;
+  color: #F8EABF;
+  letter-spacing: 0.03em;
+  line-height: 1.15;
+  margin-bottom: 12px;
+}
+.create-text .highlight-b { color: #7AE8FF; }
+.create-text .line2 {
+  font-size: clamp(36px, 6.3vw, 84px);
+  font-weight: 900;
+  color: #FFD23F;
+  letter-spacing: 0.02em;
+  margin-bottom: 3vw;
+}
+.start-btn {
+  background: linear-gradient(180deg, #6AB3F0 0%, #2FA1E8 100%);
+  border: none;
+  color: #fff;
+  padding: clamp(12px, 1.6vw, 22px) clamp(36px, 5vw, 70px);
+  font-size: clamp(27px, 3.6vw, 48px);
+  font-weight: 300;
+  letter-spacing: 0.15em;
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  transition: transform 0.15s, filter 0.15s;
+}
+.start-btn:hover, .start-btn:focus-visible { transform: scale(1.05); filter: brightness(1.15); outline: none; }
+.pedestal-stack {
+  position: relative;
+  width: 100%;
+  max-width: 380px;
+  aspect-ratio: 1;
+  margin: 0 auto;
+}
+.pedestal-stack .halo {
+  position: absolute;
+  bottom: 18%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 4px solid rgba(122, 232, 255, 0.85);
+  box-shadow: 0 0 40px rgba(47, 211, 255, 0.5);
+  animation: haloRot 8s linear infinite;
+}
+@keyframes haloRot {
+  0%   { transform: translateX(-50%) rotateX(70deg) rotate(0deg); }
+  100% { transform: translateX(-50%) rotateX(70deg) rotate(360deg); }
+}
+.pedestal-stack .pedestal {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80%;
+}
+.pedestal-stack .pedestal-3d {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80%;
+  aspect-ratio: 2 / 1;
+  display: block;
+}
+.pedestal-stack .product {
+  position: absolute;
+  bottom: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 55%;
+  opacity: 0;
+  filter: drop-shadow(0 0 30px rgba(122, 232, 255, 0.6)) drop-shadow(0 15px 20px rgba(0,0,0,0.4));
+}
+.pedestal-stack .product-3d {
+  position: absolute;
+  bottom: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 55%;
+  height: 55%;
+  opacity: 0;
+  filter: drop-shadow(0 0 30px rgba(122, 232, 255, 0.6)) drop-shadow(0 15px 20px rgba(0,0,0,0.4));
+}
+@keyframes productFloat {
+  0%, 100% { transform: translateX(-50%) translateY(0) rotate(-3deg); }
+  50%      { transform: translateX(-50%) translateY(-14px) rotate(3deg); }
+}
+
+/* ===== Level scene shared styles ===== */
+.level {
+  padding: 0;
+}
+.level-bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  z-index: 1;
+}
+
+.level-bg-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  z-index: 0;
+}
+.level[data-level="1"] .level-bg { background-image: url('assets/scene-factory.jpg'); }
+.level[data-level="2"] .level-bg { background-image: url('assets/scene-warehouse.jpg'); }
+.level[data-level="3"] .level-bg { background-image: url('assets/scene-store.jpg'); }
+
+.level-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* Door with status light for each level (top-right corner) */
+.portal-door {
+  position: absolute;
+  top: 0;
+  right: 2%;
+  height: 55%;
+  z-index: 5;
+  transform: translateY(-5%);
+  filter: drop-shadow(0 10px 25px rgba(0, 0, 0, 0.5));
+}
+.portal-door img { height: 100%; width: auto; display: block; }
+.portal-door .light {
+  position: absolute;
+  top: 7%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 11%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: #4a0000;
+  transition: all 0.4s ease;
+}
+.portal-door.on .light {
+  background: radial-gradient(circle at 30% 30%, #FF7878, #FF1515 60%, #880000);
+  box-shadow:
+    0 0 20px #FF2B2B,
+    0 0 50px rgba(255, 43, 43, 0.8),
+    0 0 100px rgba(255, 43, 43, 0.4);
+  animation: lightFlash 0.45s ease-in-out infinite;
+}
+@keyframes lightFlash {
+  0%, 100% { filter: brightness(0.8); opacity: 0.8; }
+  50%      { filter: brightness(1.8); opacity: 1; }
+}
+
+/* Shelf-smart label (bottom-left) */
+.brand-label {
+  position: absolute;
+  left: 3%;
+  bottom: 3%;
+  background: #FFD23F;
+  color: #0B1E3A;
+  padding: 10px 26px;
+  border-radius: 999px;
+  font-size: clamp(21px, 3vw, 39px);
+  font-weight: 800;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35);
+  z-index: 6;
+  letter-spacing: 0.05em;
+}
+.brand-label b { font-weight: 900; color: #0B1E3A; }
+/* top-right variant is moved down to clear the RESTART/SOUND toolbar */
+.brand-label.tr { left: auto; right: 3%; top: 8%; bottom: auto; background: #86DFFF; }
+
+/* Option tooltips (yellow card) */
+.option-card {
+  position: absolute;
+  background: #FFD23F;
+  color: #0B1E3A;
+  padding: clamp(8px, 1.2vw, 14px) clamp(10px, 1.5vw, 18px);
+  border-radius: 14px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+  max-width: 24%;
+  font-size: clamp(13.5px, 1.65vw, 21px);
+  line-height: 1.35;
+  z-index: 8;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s, outline 0.15s;
+  outline: 0 solid var(--cyan);
+}
+.option-card:hover, .option-card.focused {
+  transform: translateY(-4px) scale(1.03);
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.45), 0 0 0 3px var(--cyan);
+  outline: none;
+}
+.option-card.blue { background: #86DFFF; }
+.option-card.picked { animation: cardFlash 0.6s ease; }
+@keyframes cardFlash {
+  0%   { box-shadow: 0 0 0 0 #FFF; }
+  50%  { box-shadow: 0 0 0 10px rgba(255, 255, 255, 0.6); background: #FFFBE0; }
+  100% { box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35); }
+}
+.option-card h4 {
+  color: #1A6FD3;
+  font-size: 1.68em;
+  margin-bottom: 6px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.option-card h4 .num {
+  display: inline-flex;
+  width: 1.5em;
+  height: 1.5em;
+  align-items: center;
+  justify-content: center;
+  background: #1A6FD3;
+  color: #FFD23F;
+  border-radius: 50%;
+  font-size: 1.27em;
+  font-weight: 800;
+}
+.option-card ul { list-style: none; padding-left: 0; }
+.option-card ul li {
+  padding-left: 12px;
+  position: relative;
+  margin-bottom: 3px;
+}
+.option-card ul li::before {
+  content: '■';
+  position: absolute;
+  left: 0;
+  color: #1A6FD3;
+  font-size: 1.05em;
+  top: 2px;
+}
+
+/* Level 1 — three trays */
+.tray-slot {
+  position: absolute;
+  bottom: 18%;
+  width: 22%;
+  z-index: 4;
+  cursor: pointer;
+  transition: transform 0.25s;
+  opacity: 0;
+}
+.tray-slot img,
+.tray-slot canvas { width: 100%; display: block; }
+.tray-slot canvas { aspect-ratio: 1 / 1; }
+.tray-slot:hover, .tray-slot.focused { transform: translateY(-8px) scale(1.04); }
+.tray-slot[data-opt="1"] { left: 10%; }
+.tray-slot[data-opt="2"] { left: 38%; }
+.tray-slot[data-opt="3"] { left: 66%; }
+#scene-level1.active .tray-slot {
+  animation: trayDrop 0.9s cubic-bezier(0.17, 0.88, 0.32, 1.28) both;
+}
+#scene-level1.active .tray-slot[data-opt="1"] { animation-delay: 1.3s; }
+#scene-level1.active .tray-slot[data-opt="2"] { animation-delay: 1.6s; }
+#scene-level1.active .tray-slot[data-opt="3"] { animation-delay: 1.9s; }
+@keyframes trayDrop {
+  0%   { transform: translateY(-180%) scale(0.7); opacity: 0; }
+  70%  { transform: translateY(10%) scale(1); opacity: 1; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+.tray-num {
+  position: absolute;
+  bottom: 6%;
+  width: 2.3em;
+  height: 2.3em;
+  border-radius: 50%;
+  background: #F9A825;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: clamp(27px, 3.75vw, 48px);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.35);
+  z-index: 5;
+}
+.tray-num[data-num="1"] { left: 16%; }
+.tray-num[data-num="2"] { left: 45%; }
+.tray-num[data-num="3"] { left: 72%; }
+
+/* Level 2 — paper rolls */
+.roll-slot {
+  position: absolute;
+  bottom: 15%;
+  width: 20%;
+  z-index: 4;
+  cursor: pointer;
+  transition: transform 0.25s;
+  opacity: 0;
+}
+.roll-slot img,
+.roll-slot canvas { width: 100%; display: block; filter: drop-shadow(0 20px 25px rgba(0,0,0,0.35)); }
+.roll-slot canvas { aspect-ratio: 1 / 1.3; }
+.roll-slot:hover, .roll-slot.focused { transform: translateY(-8px) scale(1.04); }
+.roll-slot[data-opt="1"] { left: 24%; }
+.roll-slot[data-opt="2"] { left: 55%; }
+#scene-level2.active .roll-slot {
+  animation: rollRise 1s cubic-bezier(0.17, 0.88, 0.32, 1.28) both;
+}
+#scene-level2.active .roll-slot[data-opt="1"] { animation-delay: 1.0s; }
+#scene-level2.active .roll-slot[data-opt="2"] { animation-delay: 1.4s; }
+@keyframes rollRise {
+  0%   { transform: translateY(100%) scale(0.8); opacity: 0; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+/* Level 3 — product mockup with communication options */
+.mockup {
+  position: absolute;
+  bottom: 8%;
+  left: 5%;
+  width: 22%;
+  max-height: 78%;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+  padding: 4% 3%;
+  z-index: 4;
+  aspect-ratio: 3 / 4;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  align-items: center;
+  opacity: 0;
+}
+#scene-level3.active .mockup {
+  animation: mockupSlide 0.9s cubic-bezier(0.17, 0.88, 0.32, 1.28) 0.5s both;
+}
+@keyframes mockupSlide {
+  0%   { transform: translateX(-120%) rotate(-5deg); opacity: 0; }
+  100% { transform: translateX(0) rotate(0); opacity: 1; }
+}
+.mockup .commslot {
+  width: 70%;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.15;
+  transition: all 0.4s ease;
+  position: relative;
+}
+.mockup .commslot.active {
+  opacity: 1;
+  transform: scale(1.1);
+  animation: commPop 0.5s cubic-bezier(0.17, 0.88, 0.32, 1.28);
+}
+@keyframes commPop {
+  0%   { transform: scale(0.5); }
+  60%  { transform: scale(1.2); }
+  100% { transform: scale(1.1); }
+}
+.mockup .commslot img { width: 100%; }
+.mockup .commslot .num {
+  position: absolute;
+  top: -5%;
+  left: -5%;
+  width: 28%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: #D63FFF;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: clamp(21px, 2.25vw, 30px);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+  opacity: 1;
+}
+/* Level 3 options list on right */
+.level3-options {
+  position: absolute;
+  left: 30%;
+  top: 15%;
+  width: 40%;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.level3-options .option-card {
+  position: relative;
+  max-width: none;
+  width: 100%;
+  opacity: 0;
+}
+#scene-level3.active .level3-options .option-card {
+  animation: optSlide 0.6s ease both;
+}
+#scene-level3.active .level3-options .option-card:nth-child(1) { animation-delay: 1.3s; }
+#scene-level3.active .level3-options .option-card:nth-child(2) { animation-delay: 1.6s; }
+#scene-level3.active .level3-options .option-card:nth-child(3) { animation-delay: 1.9s; }
+@keyframes optSlide {
+  0%   { transform: translateX(100%); opacity: 0; }
+  100% { transform: translateX(0); opacity: 1; }
+}
+
+/* ===== Feedback modal (educational result) ===== */
+.feedback-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(3, 21, 41, 0.88);
+  backdrop-filter: blur(4px);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+  padding: 4vw;
+}
+.feedback-overlay.active { opacity: 1; pointer-events: auto; }
+.feedback-card {
+  background: linear-gradient(180deg, #0a2a4d 0%, #031529 100%);
+  border: 2px solid var(--cyan);
+  border-radius: 18px;
+  padding: clamp(20px, 3vw, 40px);
+  max-width: 85%;
+  max-height: 90%;
+  overflow-y: auto;
+  box-shadow: 0 0 50px var(--cyan-glow), 0 20px 60px rgba(0,0,0,0.6);
+  transform: scale(0.9);
+  transition: transform 0.4s cubic-bezier(0.17, 0.88, 0.32, 1.28);
+}
+.feedback-overlay.active .feedback-card { transform: scale(1); }
+.feedback-card h2 {
+  color: var(--cyan-soft);
+  font-size: clamp(30px, 4.2vw, 54px);
+  margin-bottom: 14px;
+  text-align: center;
+  letter-spacing: 0.05em;
+}
+.feedback-card h2 .emoji { font-size: 1.95em; margin-right: 10px; }
+.feedback-card .score-row {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+.feedback-card .pip {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.1);
+  border: 2px solid rgba(255,255,255,0.2);
+  transition: all 0.3s ease;
+}
+.feedback-card .pip.lit { background: #FFD23F; border-color: #fff; box-shadow: 0 0 14px #FFD23F; }
+.feedback-card .options-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.feedback-card .fb-opt {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-left: 4px solid var(--cyan);
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-size: clamp(18px, 2.1vw, 24px);
+  line-height: 1.4;
+}
+.feedback-card .fb-opt.user {
+  background: rgba(47, 211, 255, 0.12);
+  border-left-color: var(--cyan);
+  box-shadow: 0 0 14px rgba(47, 211, 255, 0.25);
+}
+.feedback-card .fb-opt.best {
+  background: rgba(255, 210, 63, 0.1);
+  border-left-color: #FFD23F;
+}
+.feedback-card .fb-opt.user.best { background: linear-gradient(90deg, rgba(255, 210, 63, 0.2), rgba(47, 211, 255, 0.15)); }
+.feedback-card .fb-opt b { color: var(--cyan-soft); }
+.feedback-card .fb-opt .verdict {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 1.2em;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  margin-left: 8px;
+  text-transform: uppercase;
+}
+.feedback-card .fb-opt .verdict.best { background: #FFD23F; color: #0B1E3A; }
+.feedback-card .fb-opt .verdict.picked { background: var(--cyan); color: #0B1E3A; }
+.feedback-card .continue-hint {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: clamp(16.5px, 1.8vw, 21px);
+  letter-spacing: 0.08em;
+}
+.feedback-card .continue-hint kbd {
+  background: #fff;
+  color: #0B1E3A;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-weight: 700;
+  font-size: 1.42em;
+  margin: 0 4px;
+}
+
+/* ===== Finale ===== */
+.finale {
+  padding: 10vh 6vw 4vh;
+  text-align: center;
+}
+.finale h1 {
+  font-size: clamp(42px, 7.5vw, 108px);
+  font-weight: 900;
+  background: linear-gradient(90deg, #FFD23F, #FF7878, #7AE8FF, #FFD23F);
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: gradShift 4s linear infinite;
+  margin-bottom: 10px;
+}
+@keyframes gradShift {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 300% 50%; }
+}
+.finale .rank {
+  font-size: clamp(27px, 3.6vw, 45px);
+  color: var(--cyan-soft);
+  margin-bottom: 16px;
+  letter-spacing: 0.1em;
+}
+.finale .score-big {
+  font-size: clamp(72px, 15vw, 210px);
+  font-weight: 900;
+  color: #FFD23F;
+  text-shadow: 0 0 30px rgba(255, 210, 63, 0.5);
+  line-height: 1;
+}
+.finale .score-max {
+  font-size: 0.6em;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+.finale .summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin: 2vw auto;
+  max-width: 80%;
+}
+.finale .summary .card {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(47, 211, 255, 0.3);
+  border-radius: 12px;
+  padding: 14px;
+  font-size: clamp(16.5px, 1.95vw, 22.5px);
+  text-align: left;
+}
+.finale .summary .card .lvl { color: var(--cyan); font-weight: 700; font-size: 1.27em; letter-spacing: 0.1em; }
+.finale .summary .card .pick { font-weight: 800; color: #FFD23F; margin: 4px 0 2px; }
+.finale .summary .card .stars { color: #FFD23F; letter-spacing: 3px; }
+.finale-actions { display: flex; gap: 14px; justify-content: center; margin-top: 2vw; }
+
+/* ===== Toolbar ===== */
+.toolbar {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: flex;
+  gap: 8px;
+  z-index: 100;
+}
+.toolbar button {
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  border: 1px solid rgba(47, 211, 255, 0.4);
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: clamp(15px, 1.65vw, 21px);
+  cursor: pointer;
+  letter-spacing: 0.05em;
+  transition: background 0.2s, border-color 0.2s;
+  font-family: inherit;
+  font-weight: 700;
+}
+.toolbar button:hover { background: rgba(47, 211, 255, 0.2); border-color: var(--cyan); }
+.toolbar button.muted { color: rgba(255,255,255,0.5); }
+
+/* ===== Back button — top-left of each scene (except title) ===== */
+.back-btn {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  border: 1px solid rgba(47, 211, 255, 0.4);
+  border-radius: 999px;
+  padding: 8px 14px 8px 10px;
+  font-size: clamp(15px, 1.65vw, 21px);
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  transition: background 0.2s, border-color 0.2s, transform 0.15s;
+  z-index: 100;
+  opacity: 0;
+  animation: seqFadeIn 0.4s ease 0.2s both;
+}
+.back-btn:hover {
+  background: rgba(47, 211, 255, 0.2);
+  border-color: var(--cyan);
+  transform: translateX(-2px);
+}
+.back-btn svg {
+  width: 14px; height: 14px;
+  fill: currentColor;
+}
+/* Hidden on title and finale */
+#scene-title .back-btn,
+#scene-finale .back-btn,
+#scene-portals .back-btn { display: none; }
+
+/* ===== Keyboard hint footer ===== */
+.kb-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 3%;
+  transform: translateX(-50%);
+  z-index: 50;
+  font-size: clamp(15px, 1.65vw, 21px);
+  color: rgba(255, 255, 255, 0.65);
+  display: flex;
+  gap: 14px;
+  letter-spacing: 0.08em;
+  pointer-events: none;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+.kb-hint kbd {
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(47, 211, 255, 0.5);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: monospace;
+  color: #fff;
+  font-weight: 700;
+  margin-right: 4px;
+}
+
+/* ===== FX canvas ===== */
+#fx {
+  position: absolute;
+  inset: 0;
+  z-index: 80;
+  pointer-events: none;
+}
+
+/* ===== Loader for initial asset preload ===== */
+#preload {
+  position: fixed;
+  inset: 0;
+  background: #031529;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  color: #fff;
+  font-family: inherit;
+  transition: opacity 0.6s ease;
+}
+#preload.done { opacity: 0; pointer-events: none; }
+#preload .spinner {
+  width: 60px; height: 60px;
+  border: 4px solid rgba(47, 211, 255, 0.2);
+  border-top-color: var(--cyan);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+  margin-bottom: 20px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+#preload .pct {
+  font-size: 21px;
+  letter-spacing: 0.1em;
+  color: var(--cyan-soft);
+}
+
+/* ===== Responsive small screens ===== */
+@media (max-aspect-ratio: 4/3) {
+  .scene-body p { max-width: 95%; }
+}
+
+/* Accessibility: reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.1s !important;
+  }
+}
+
+/* ============================================================
+   ANIMATION LIBRARY — Motion paths & text effects
+   Elements with .seq-* classes animate when their scene becomes .active
+   Stagger via data-delay="n" (n * 150ms base delay)
+   ============================================================ */
+
+/* Base: hide elements until their scene activates (avoids FOUC) */
+.scene [class*="seq-"] {
+  opacity: 0;
+  animation-play-state: paused;
+}
+.scene.active [class*="seq-"] {
+  animation-play-state: running;
+}
+
+/* Keyframe zoo */
+@keyframes seqFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes seqFadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes seqFadeDown {
+  from { opacity: 0; transform: translateY(-30px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes seqSlideLeft {
+  from { opacity: 0; transform: translateX(-100px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes seqSlideRight {
+  from { opacity: 0; transform: translateX(100px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes seqPopIn {
+  0%   { opacity: 0; transform: scale(0.3); }
+  70%  { transform: scale(1.12); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes seqRiseFromBottom {
+  0%   { opacity: 0; transform: translateY(100vh); }
+  70%  { opacity: 1; transform: translateY(-8px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes seqDrawPill {
+  0%   { opacity: 0; transform: translateX(-50%) scaleX(0); }
+  40%  { opacity: 0.6; transform: translateX(-50%) scaleX(0.15); }
+  100% { opacity: 1; transform: translateX(-50%) scaleX(1); }
+}
+
+/* Apply animations via class */
+.seq-fade   { animation: seqFadeIn 0.6s ease both; }
+.seq-up     { animation: seqFadeUp 0.7s cubic-bezier(0.17, 0.88, 0.32, 1.28) both; }
+.seq-down   { animation: seqFadeDown 0.7s cubic-bezier(0.17, 0.88, 0.32, 1.28) both; }
+.seq-left   { animation: seqSlideLeft 0.8s cubic-bezier(0.17, 0.88, 0.32, 1.28) both; }
+.seq-right  { animation: seqSlideRight 0.8s cubic-bezier(0.17, 0.88, 0.32, 1.28) both; }
+.seq-pop    { animation: seqPopIn 0.6s cubic-bezier(0.17, 0.88, 0.32, 1.28) both; }
+.seq-rise   { animation: seqRiseFromBottom 1.1s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* Header pill "draws in" */
+.header-pill.seq-pill {
+  opacity: 0;
+  transform: translateX(-50%) scaleX(0);
+  transform-origin: center;
+}
+.scene.active .header-pill.seq-pill {
+  animation: seqDrawPill 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both;
+}
+
+/* Stagger delays (multiples of 130ms) */
+.scene.active [data-delay="1"] { animation-delay: 0.13s; }
+.scene.active [data-delay="2"] { animation-delay: 0.26s; }
+.scene.active [data-delay="3"] { animation-delay: 0.39s; }
+.scene.active [data-delay="4"] { animation-delay: 0.52s; }
+.scene.active [data-delay="5"] { animation-delay: 0.65s; }
+.scene.active [data-delay="6"] { animation-delay: 0.78s; }
+.scene.active [data-delay="7"] { animation-delay: 0.95s; }
+.scene.active [data-delay="8"] { animation-delay: 1.15s; }
+.scene.active [data-delay="9"] { animation-delay: 1.4s; }
+.scene.active [data-delay="10"] { animation-delay: 1.7s; }
+.scene.active [data-delay="11"] { animation-delay: 2.0s; }
+.scene.active [data-delay="12"] { animation-delay: 2.3s; }
+.scene.active [data-delay="13"] { animation-delay: 2.6s; }
+.scene.active [data-delay="14"] { animation-delay: 2.9s; }
+.scene.active [data-delay="15"] { animation-delay: 3.3s; }
+.scene.active [data-delay="16"] { animation-delay: 3.7s; }
+
+/* Typewriter effect — controlled via JS */
+.typewriter {
+  display: inline-block;
+  white-space: pre-wrap;
+}
+.typewriter::after {
+  content: '|';
+  color: var(--cyan);
+  animation: caretBlink 0.8s steps(2) infinite;
+  margin-left: 2px;
+}
+.typewriter.done::after { content: none; }
+@keyframes caretBlink {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0; }
+}
+
+/* ============================================================
+   PORTAL TRANSITION SCENE — 3 doors centered, same size, selectable
+   Selected door opens to reveal preview with bouncing/spinning bag
+   ============================================================ */
+.scene-portals {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 0;
+  background:
+    radial-gradient(ellipse at 50% 50%, #1a4d80 0%, #031529 70%),
+    #031529;
+}
+.scene-portals .portals-caption {
+  position: absolute;
+  top: 12%;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #fff;
+  font-size: clamp(24px, 3.3vw, 42px);
+  letter-spacing: 0.1em;
+  font-weight: 700;
+  text-shadow: 0 0 16px var(--cyan-glow);
+  text-align: center;
+  opacity: 0;
+  animation: seqFadeIn 0.6s ease 0.4s both;
+  white-space: nowrap;
+  z-index: 10;
+}
+.portals-row {
+  position: relative;
+  display: flex;
+  gap: 5vw;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  /* Centered vertically */
+}
+.portal-slot {
+  /* Now a button */
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  flex: 0 0 auto;
+  width: 18%;
+  max-width: 220px;
+  position: relative;
+  opacity: 0;
+  transform: translateY(120vh);
+  filter: drop-shadow(0 24px 40px rgba(0, 0, 0, 0.45));
+  transition: filter 0.2s, transform 0.2s;
+}
+.portal-slot:focus-visible {
+  outline: none;
+}
+.portal-slot.focused, .portal-slot:hover {
+  filter: drop-shadow(0 0 25px var(--cyan-glow)) drop-shadow(0 24px 40px rgba(0, 0, 0, 0.45));
+  transform: translateY(-8px) scale(1.03);
+}
+.portal-door-container {
+  position: relative;
+  width: 100%;
+  perspective: 1000px;
+  line-height: 0; /* collapse img gap */
+}
+.portal-door-leaf {
+  width: 100%;
+  height: auto;
+  display: block;
+  /* Anchor rotation to left edge so door opens inward-left */
+  transform-origin: left center;
+  transform-style: preserve-3d;
+  transition: transform 0.8s cubic-bezier(0.5, 0, 0.3, 1);
+  position: relative;
+  z-index: 3;
+}
+.portal-door-3d {
+  width: 100%;
+  aspect-ratio: 1 / 2;
+  display: block;
+  position: relative;
+  z-index: 3;
+}
+/* Preview BEHIND the door — hidden at rest */
+.portal-preview {
+  position: absolute;
+  /* Size approximately to the door opening (excluding frame) */
+  top: 9%;
+  left: 12%;
+  width: 76%;
+  height: 82%;
+  overflow: hidden;
+  z-index: 1;
+  background: #222;
+  border-radius: 2px;
+  box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.7);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s;
+}
+.portal-preview .preview-scene {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+}
+.preview-factory { background-image: url('assets/scene-factory.jpg'); }
+.preview-monster {
+  position: absolute;
+  left: 50%;
+  bottom: 12%;
+  width: 55%;
+  transform: translateX(-50%);
+  filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.5));
+  opacity: 0;
+}
+
+/* Light on top of every door - use the PNG's built-in light,
+   our overlay only activates when chosen (for color change) */
+.portal-slot .portal-light {
+  position: absolute;
+  top: 5.5%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 10%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: transparent;
+  z-index: 4;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+/* Door-rise entrance (staggered via JS, or nth-child) */
+.scene-portals.active .portal-slot {
+  animation: portalRise 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.scene-portals.active .portal-slot:nth-child(1) { animation-delay: 0.6s; }
+.scene-portals.active .portal-slot:nth-child(2) { animation-delay: 0.9s; }
+.scene-portals.active .portal-slot:nth-child(3) { animation-delay: 1.2s; }
+@keyframes portalRise {
+  0%   { opacity: 0; transform: translateY(120vh); }
+  80%  { opacity: 1; transform: translateY(-10px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* When chosen: light activates, door opens, preview shows, bag bounces */
+.portal-slot.chosen .portal-light {
+  opacity: 1;
+  animation: portalLightPulse 0.45s ease-in-out infinite;
+  background: radial-gradient(circle at 30% 30%, #FFA0A0, #FF2020 60%, #660000);
+  box-shadow: 0 0 18px #FF2B2B, 0 0 45px rgba(255, 43, 43, 0.85);
+}
+@keyframes portalLightPulse {
+  0%, 100% { filter: brightness(1); }
+  50%      { filter: brightness(1.6); }
+}
+
+.portal-slot.chosen .portal-preview {
+  opacity: 1;
+  visibility: visible;
+  transition-delay: 1.8s;
+}
+
+/* Door opens: rotateY swings inward around left hinge */
+.portal-slot.chosen .portal-door-leaf {
+  animation: doorOpen 1s cubic-bezier(0.5, 0, 0.3, 1) 2s forwards;
+}
+@keyframes doorOpen {
+  0%   { transform: perspective(1000px) rotateY(0deg); }
+  100% { transform: perspective(1000px) rotateY(-115deg); }
+}
+
+/* Monster bag preview: jumps and rotates once door opens */
+.portal-slot.chosen .preview-monster {
+  animation: monsterReveal 0.4s ease 2.4s both, monsterJumpSpin 1.6s cubic-bezier(0.4, 0, 0.6, 1) 2.8s both;
+}
+@keyframes monsterReveal {
+  from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+@keyframes monsterJumpSpin {
+  0%   { transform: translateX(-50%) translateY(0)   rotateY(0deg)   scale(1); }
+  25%  { transform: translateX(-50%) translateY(-40%) rotateY(180deg) scale(1.1); }
+  50%  { transform: translateX(-50%) translateY(-10%) rotateY(360deg) scale(1); }
+  75%  { transform: translateX(-50%) translateY(-30%) rotateY(540deg) scale(1.05); }
+  100% { transform: translateX(-50%) translateY(0)   rotateY(720deg) scale(1); }
+}
+
+/* Non-chosen doors dim out after selection */
+.scene-portals.has-chosen .portal-slot:not(.chosen) {
+  animation: portalDim 0.5s ease 0.3s forwards;
+}
+@keyframes portalDim {
+  to { opacity: 0.3; filter: grayscale(0.6) brightness(0.5); transform: scale(0.95); }
+}
+
+/* TELEPORT EFFECT: whole stage blurs + zooms when transitioning away */
+#stage.teleporting {
+  animation: teleportOut 0.9s cubic-bezier(0.7, 0, 0.84, 0) forwards;
+}
+@keyframes teleportOut {
+  0%   { filter: blur(0px) brightness(1); transform: scale(1); }
+  50%  { filter: blur(8px) brightness(1.4); transform: scale(1.15); }
+  100% { filter: blur(30px) brightness(2.5); transform: scale(1.6); opacity: 0; }
+}
+#stage.teleporting-in {
+  animation: teleportIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes teleportIn {
+  0%   { filter: blur(30px) brightness(2.5); transform: scale(0.7); opacity: 0; }
+  60%  { opacity: 1; }
+  100% { filter: blur(0px) brightness(1); transform: scale(1); opacity: 1; }
+}
+
+/* ============================================================
+   MISSION SCENE — fast fade per line, centered
+   ============================================================ */
+#scene-mission .mission-layout {
+  padding: 16vh 6vw 10vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 3vh;
+  height: 100%;
+}
+#scene-mission .mission-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2.5vh;
+  align-items: center;
+  text-align: center;
+  max-width: 820px;
+}
+#scene-mission .mission-text .line {
+  font-size: clamp(24px, 3.3vw, 39px);
+  font-weight: 400;
+  line-height: 1.5;
+  color: #fff;
+}
+#scene-mission .mission-text .line b {
+  color: var(--cyan-soft);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+/* ============================================================
+   RULES SCENE LAYOUT — centered column
+   ============================================================ */
+#scene-rules .rules-layout {
+  padding: 13vh 6vw 10vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 4vh;
+  height: 100%;
+  width: 100%;
+}
+
+/* ============================================================
+   RULES SCENE — big clickable red door as advance button
+   ============================================================ */
+  padding: 13vh 6vw 10vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 3vh;
+  height: 100%;
+}
+#scene-rules .rules-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2vh;
+  align-items: center;
+  text-align: center;
+  max-width: 900px;
+  margin-bottom: 2vh;
+}
+#scene-rules .rules-text .line {
+  font-size: clamp(22.5px, 3.15vw, 36px);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.4;
+  color: #fff;
+}
+
+/* Big door button */
+.rules-door-btn {
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5vh;
+  opacity: 0;
+  transform: translateY(60vh);
+  font-family: inherit;
+}
+#scene-rules.active .rules-door-btn {
+  animation: doorRise 1.1s cubic-bezier(0.22, 1, 0.36, 1) 2.0s both;
+}
+@keyframes doorRise {
+  0%   { opacity: 0; transform: translateY(60vh); }
+  80%  { opacity: 1; transform: translateY(-10px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.rules-door-btn:hover { transform: translateY(-6px); }
+.rules-door-btn:active { transform: translateY(-2px); }
+.rules-door-btn .door-frame {
+  position: relative;
+  width: clamp(140px, 16vw, 220px);
+  transition: filter 0.2s;
+  filter: drop-shadow(0 12px 30px rgba(0, 0, 0, 0.5));
+}
+.rules-door-btn:hover .door-frame {
+  filter: drop-shadow(0 16px 40px rgba(255, 43, 43, 0.55)) drop-shadow(0 8px 20px rgba(0, 0, 0, 0.4));
+}
+.rules-door-btn:focus-visible { outline: none; }
+.rules-door-btn:focus-visible .door-frame {
+  filter: drop-shadow(0 0 20px rgba(47, 211, 255, 0.9)) drop-shadow(0 12px 30px rgba(0, 0, 0, 0.5));
+}
+.rules-door-btn .door-frame img { width: 100%; display: block; }
+.rules-door-btn .door-frame canvas {
+  width: 100%;
+  aspect-ratio: 1 / 2;
+  display: block;
+}
+.rules-door-btn .rules-door-caption {
+  font-size: clamp(18px, 1.95vw, 24px);
+  letter-spacing: 0.25em;
+  color: var(--cyan-soft);
+  text-shadow: 0 0 10px var(--cyan-glow);
+  font-weight: 700;
+  opacity: 0;
+}
+#scene-rules.active .rules-door-caption {
+  animation: captionPulse 2s ease-in-out 3.5s infinite;
+}
+@keyframes captionPulse {
+  0%, 100% { opacity: 0.6; }
+  50%      { opacity: 1; }
+}
+
+/* Red light overlay positioning for the rules door */
+#scene-rules .door-light-overlay {
+  position: absolute;
+  top: 2%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 14%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #FF7878, #FF1515 60%, #880000);
+  box-shadow: 0 0 20px #FF2B2B, 0 0 50px rgba(255, 43, 43, 0.7);
+  opacity: 0;
+  pointer-events: none;
+}
+#scene-rules.active .door-light-overlay {
+  animation: ruleLight 1.3s ease-in-out 3.3s infinite;
+}
+@keyframes ruleLight {
+  0%, 100% { opacity: 0.8; filter: brightness(1); }
+  50%      { opacity: 1;   filter: brightness(1.5); }
+}
+
+/* ============================================================
+   LET'S CREATE — Bag flight to pedestal
+   The bag is initially in a "client-position" on the left,
+   then flies right to land on the pedestal.
+   ============================================================ */
+.scene-create .pedestal-stack .pedestal,
+.scene-create .pedestal-stack .halo {
+  opacity: 0;
+}
+.scene-create.active .pedestal-stack .pedestal {
+  animation: pedestalRise 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.3s both;
+}
+.scene-create.active .pedestal-stack .halo {
+  animation: haloFade 1s ease 1.5s both, haloRot 8s linear 1.5s infinite;
+}
+@keyframes pedestalRise {
+  0%   { opacity: 0; transform: translateX(-50%) translateY(100%); }
+  100% { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+@keyframes haloFade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.scene-create.active .pedestal-stack .product,
+.scene-create.active .pedestal-stack .product-3d,
+.scene-create.active .pedestal-stack .product-2d-fallback {
+  animation:
+    bagFlight 1.4s cubic-bezier(0.45, 0.05, 0.55, 0.95) 0.8s both,
+    productFloat 3s ease-in-out 2.2s infinite;
+}
+@keyframes bagFlight {
+  0% {
+    transform: translateX(-150%) translateY(100px) rotate(-30deg) scale(0.7);
+    opacity: 0;
+  }
+  20% { opacity: 1; }
+  60% {
+    transform: translateX(0%) translateY(-60px) rotate(10deg) scale(1.1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-50%) translateY(0) rotate(-3deg) scale(1);
+    opacity: 1;
+  }
+}
+
+/* ============================================================
+   FEEDBACK — score pips light up in sequence
+   ============================================================ */
+.feedback-overlay.active .pip {
+  animation: pipFill 0.3s ease-out both;
+}
+.feedback-overlay.active .pip:nth-child(1) { animation-delay: 0.5s; }
+.feedback-overlay.active .pip:nth-child(2) { animation-delay: 0.75s; }
+.feedback-overlay.active .pip:nth-child(3) { animation-delay: 1.0s; }
+@keyframes pipFill {
+  0%   { transform: scale(0.5); }
+  60%  { transform: scale(1.4); }
+  100% { transform: scale(1); }
+}
+
+/* Options stagger in the feedback */
+.feedback-overlay.active .fb-opt {
+  animation: seqFadeUp 0.5s cubic-bezier(0.17, 0.88, 0.32, 1.28) both;
+}
+.feedback-overlay.active .fb-opt:nth-child(1) { animation-delay: 0.6s; }
+.feedback-overlay.active .fb-opt:nth-child(2) { animation-delay: 0.8s; }
+.feedback-overlay.active .fb-opt:nth-child(3) { animation-delay: 1.0s; }
+
+/* ===== Rotate-to-landscape overlay (mobile portrait) ===== */
+#rotate-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  padding: 32px;
+  text-align: center;
+  background: radial-gradient(ellipse at center, #062542 0%, #010812 100%);
+  color: var(--text);
+  font-family: 'Rajdhani', 'Segoe UI', system-ui, sans-serif;
+}
+#rotate-overlay.active { display: flex; }
+#rotate-overlay .rotate-icon {
+  font-size: clamp(60px, 18vw, 110px);
+  line-height: 1;
+  filter: drop-shadow(0 0 20px var(--cyan-glow));
+  animation: rotateNudge 2.4s ease-in-out infinite;
+}
+@keyframes rotateNudge {
+  0%, 100% { transform: rotate(-90deg); }
+  45%, 55% { transform: rotate(0deg); }
+}
+#rotate-overlay h2 {
+  margin: 0;
+  font-size: clamp(20px, 5vw, 32px);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cyan);
+  text-shadow: 0 0 14px var(--cyan-glow);
+}
+#rotate-overlay p {
+  margin: 0;
+  max-width: 30em;
+  font-size: clamp(14px, 3.5vw, 17px);
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+#rotate-overlay button {
+  margin-top: 8px;
+  padding: 10px 22px;
+  background: transparent;
+  color: var(--cyan);
+  border: 2px solid var(--cyan);
+  border-radius: 999px;
+  font: inherit;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+#rotate-overlay button:hover { background: var(--cyan); color: #000; }
+</style>
 </head>
 <body>
-    <div class="reveal">
-        <div class="slides" id="slideContainer"></div>
+
+<div id="preload">
+  <div class="spinner"></div>
+  <div class="pct" id="pct">Loading assets · 0%</div>
+</div>
+
+<!-- Rotate-to-landscape overlay (only shows on portrait phones) -->
+<div id="rotate-overlay" role="dialog" aria-labelledby="rotate-title">
+  <div class="rotate-icon" aria-hidden="true">📱</div>
+  <h2 id="rotate-title">Please rotate your device</h2>
+  <p>BUILD-A-BOX is designed for landscape. Rotate your phone or tablet sideways for the best experience.</p>
+  <button id="rotate-continue" type="button">Continue anyway</button>
+</div>
+
+<div id="stage-wrapper">
+<div id="stage" tabindex="0" aria-label="BUILD-A-BOX game stage">
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <button id="btn-mute" aria-label="Toggle sound">🔊 SOUND</button>
+    <button id="btn-restart" aria-label="Restart game">⟲ RESTART</button>
+  </div>
+
+  <!-- Global back button (top-left, hidden on title/portals/finale via CSS) -->
+  <button id="btn-back" class="back-btn" aria-label="Go back to previous scene">
+    <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+    BACK
+  </button>
+
+  <!-- FX canvas for particles / confetti -->
+  <canvas id="fx"></canvas>
+
+  <!-- ======== SCENE: TITLE ======== -->
+  <div class="scene active" id="scene-title">
+    <div class="title-logo">
+      <div class="dotrow"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      <h1>BUILD-A-BOX</h1>
+    </div>
+    <div class="title-byline">
+      <span>An experience created by</span>
+      <img src="assets/logo-ignite.png" alt="Smurfit Westrock" />
+    </div>
+    <button class="play-button" id="start-game" aria-label="Start game">
+      <div class="play-icon">
+        <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+      </div>
+      <div class="play-label">START GAME</div>
+    </button>
+    <div class="kb-hint"><kbd>Enter</kbd> Start &nbsp; · &nbsp; <kbd>M</kbd> Mute</div>
+  </div>
+
+  <!-- ======== SCENE: CONGRATS ======== -->
+  <div class="scene" id="scene-congrats">
+    <div class="header-pill seq-pill">LOADING <span class="dots">· · · ·</span></div>
+    <div class="scene-body">
+      <h2 class="seq-up" data-delay="2">CONGRATULATIONS!</h2>
+      <p class="lede seq-up" data-delay="4">YOU ARE IN CHARGE OF DESIGNING PACKAGING SOLUTIONS<br>FOR SMURFIT WESTROCK CUSTOMERS.</p>
+      <p class="seq-up" data-delay="6">SELECT THE DESIGN FEATURES THAT BEST FULFILL THE ASSIGNED MISSION<br>AND CREATE THE IDEAL SOLUTION TO STAND OUT AT THE POINT OF SALE.</p>
+      <button class="arrow-btn advance seq-pop" data-delay="8" aria-label="Next">NEXT</button>
+    </div>
+    <img class="ignite-mark" src="assets/logo-ignite.png" alt="" />
+    <div class="kb-hint"><kbd>Enter</kbd> Continue &nbsp; · &nbsp; <kbd>Backspace</kbd> Back</div>
+  </div>
+
+  <!-- ======== SCENE: RULES ======== -->
+  <div class="scene" id="scene-rules">
+    <div class="header-pill seq-pill">LOADING <span class="dots">· · · ·</span></div>
+    <div class="scene-body rules-layout">
+      <div class="rules-text">
+        <p class="line seq-fade" data-delay="3">Travel through 3 portals to choose the features of your packaging design.</p>
+        <p class="line seq-fade" data-delay="6">When you make your choice, the door will light up red — click it to advance.</p>
+      </div>
+      <button class="rules-door-btn advance" id="rules-door-btn" aria-label="Enter next scene">
+        <div class="door-frame">
+          <canvas class="rules-door-3d" id="rules-door-3d-canvas" aria-label="Red portal door"></canvas>
+          <img class="rules-door-2d-fallback" id="rules-door-2d-fallback" src="assets/door-red.png" alt="Red portal door with light" style="display: none;" />
+          <div class="door-light-overlay"></div>
+        </div>
+        <span class="rules-door-caption">CLICK TO ENTER</span>
+      </button>
+    </div>
+    <img class="ignite-mark" src="assets/logo-ignite.png" alt="" />
+    <div class="kb-hint"><kbd>Enter</kbd> Enter &nbsp; · &nbsp; <kbd>Backspace</kbd> Back</div>
+  </div>
+
+  <!-- ======== SCENE: MISSION ======== -->
+  <div class="scene" id="scene-mission">
+    <div class="header-pill seq-pill">MISSION <span class="dots">· · · ·</span></div>
+    <div class="scene-body mission-layout">
+      <div class="mission-text">
+        <p class="line seq-fade" data-delay="3">In <b>BUILD-A-BOX</b>, you are responsible for designing packaging solutions for Smurfit Westrock customers.</p>
+        <p class="line seq-fade" data-delay="5">Select the design features that best meet the assigned mission and create the ideal solution to stand out at the point of sale.</p>
+      </div>
+      <button class="arrow-btn advance seq-pop" data-delay="8" aria-label="Continue to mission">START MISSION</button>
+    </div>
+    <img class="ignite-mark" src="assets/logo-ignite.png" alt="" />
+    <div class="kb-hint"><kbd>Enter</kbd> Continue &nbsp; · &nbsp; <kbd>Backspace</kbd> Back</div>
+  </div>
+
+  <!-- ======== SCENE: CLIENT ======== -->
+  <div class="scene scene-client" id="scene-client">
+    <div class="header-pill seq-pill">LOADING <span class="dots">· · · ·</span></div>
+    <img class="client-bag seq-left" data-delay="2" src="assets/bag-monster.png" alt="Monster Snacks bag" />
+    <div class="client-card seq-down" data-delay="3">
+      <h3>Client: <img src="assets/logo-monster.png" class="brand-logo" alt="Monster Snacks" /></h3>
+      <div class="client-stars">★ ★ ★ ★ ☆</div>
+      <p>Monster Snacks is a <span class="hl">recognized brand</span> in the market.<br>
+         Currently have <span class="hl">no presence</span> in club stores.</p>
+      <ul>
+        <li>Position their flagship snack <b>(Cheese Flavor)</b> in warehouse club stores.</li>
+        <li>Need packaging that helps identify the product at the point of sale and adapts to the store format.</li>
+      </ul>
+      <button class="arrow-btn pink advance seq-pop" data-delay="8" style="margin-top: 14px;" aria-label="Next">NEXT</button>
+    </div>
+    <img class="ignite-mark" src="assets/logo-ignite.png" alt="" />
+    <div class="kb-hint"><kbd>Enter</kbd> Continue &nbsp; · &nbsp; <kbd>Backspace</kbd> Back</div>
+  </div>
+
+  <!-- ======== SCENE: LET'S CREATE ======== -->
+  <div class="scene scene-create" id="scene-create">
+    <div class="header-pill seq-pill">
+      <span class="icon">🛒</span> LOADING <span class="dots">· · · ·</span>
+    </div>
+    <div class="create-text">
+      <div class="line1 seq-up" data-delay="6">HELP <span class="highlight-b">MONSTER SNACKS</span><br>TO HAVE A GREAT DEBUT.</div>
+      <div class="line2 seq-pop" data-delay="8">LET'S CREATE!</div>
+      <button class="start-btn advance seq-pop" data-delay="10" id="btn-lets-start" aria-label="Start designing">START</button>
+    </div>
+    <div class="pedestal-stack">
+      <div class="halo"></div>
+      <canvas class="pedestal-3d" id="pedestal-3d-canvas" aria-label="Pedestal turntable"></canvas>
+      <img class="pedestal pedestal-2d-fallback" id="pedestal-2d-fallback" src="assets/pedestal.png" alt="" style="display: none;" />
+      <canvas class="product-3d" id="bag-3d-canvas" aria-label="Monster Snacks bag (3D)"></canvas>
+      <img class="product product-2d-fallback" id="bag-2d-fallback" src="assets/bag-monster.png" alt="" style="display: none;" />
+    </div>
+    <img class="ignite-mark" src="assets/logo-ignite.png" alt="" />
+    <div class="kb-hint"><kbd>Enter</kbd> Start designing &nbsp; · &nbsp; <kbd>Backspace</kbd> Back</div>
+  </div>
+
+  <!-- ======== PORTAL TRANSITION ======== -->
+  <div class="scene scene-portals" id="scene-portals">
+    <div class="portals-caption">CHOOSE YOUR PORTAL TO BEGIN</div>
+    <div class="portals-row">
+      <button class="portal-slot" data-portal="1" data-glb="Door3.glb" aria-label="Enter portal 1">
+        <div class="portal-door-container">
+          <canvas class="portal-door-3d" id="portal-door-1-3d"></canvas>
+          <img class="portal-door-leaf portal-door-2d-fallback" id="portal-door-1-fallback" src="assets/door-yellow.png" alt="" style="display: none;" />
+          <div class="portal-preview" aria-hidden="true">
+            <div class="preview-scene preview-factory"></div>
+            <img class="preview-monster preview-monster-blue" src="assets/bag-monster.png" alt="" />
+          </div>
+          <div class="portal-light"></div>
+        </div>
+      </button>
+      <button class="portal-slot" data-portal="2" data-glb="Door1.glb" aria-label="Enter portal 2">
+        <div class="portal-door-container">
+          <canvas class="portal-door-3d" id="portal-door-2-3d"></canvas>
+          <img class="portal-door-leaf portal-door-2d-fallback" id="portal-door-2-fallback" src="assets/door-red.png" alt="" style="display: none;" />
+          <div class="portal-preview" aria-hidden="true">
+            <div class="preview-scene preview-factory"></div>
+            <img class="preview-monster preview-monster-blue" src="assets/bag-monster.png" alt="" />
+          </div>
+          <div class="portal-light"></div>
+        </div>
+      </button>
+      <button class="portal-slot" data-portal="3" data-glb="Door2.glb" aria-label="Enter portal 3">
+        <div class="portal-door-container">
+          <canvas class="portal-door-3d" id="portal-door-3-3d"></canvas>
+          <img class="portal-door-leaf portal-door-2d-fallback" id="portal-door-3-fallback" src="assets/door-green.png" alt="" style="display: none;" />
+          <div class="portal-preview" aria-hidden="true">
+            <div class="preview-scene preview-factory"></div>
+            <img class="preview-monster preview-monster-blue" src="assets/bag-monster.png" alt="" />
+          </div>
+          <div class="portal-light"></div>
+        </div>
+      </button>
+    </div>
+    <img class="ignite-mark" src="assets/logo-ignite.png" alt="" />
+    <div class="kb-hint"><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> Choose portal &nbsp; · &nbsp; <kbd>←</kbd><kbd>→</kbd> Browse · <kbd>Enter</kbd> Enter</div>
+  </div>
+
+  <!-- ======== LEVEL 1: Factory — choose tray ======== -->
+  <div class="scene level" id="scene-level1" data-level="1">
+    <div class="level-bg"><video class="level-bg-video" muted playsinline preload="auto" poster="assets/scene-factory.jpg"><source src="assets/scene-factory.mp4" type="video/mp4"></video></div>
+    <div class="brand-label seq-pop" data-delay="2">Shelf<b>Smart</b></div>
+    <div class="portal-door seq-down" data-delay="3" id="door1">
+      <img src="assets/door-yellow.png" alt="" />
+      <div class="light"></div>
     </div>
 
-    <!-- HUD overlay -->
-    <div class="hud-overlay">
-        <div class="hud-left">
-            <span class="hud-brand"><span>🎮</span> BUILD-A-BOX</span>
-        </div>
-        <div class="hud-right">
-            <span class="hud-score" id="hudScore">Score: 0</span>
-            <button class="hud-fs" id="hudFsBtn" title="Toggle fullscreen (F)">⛶</button>
-            <button class="hud-help" id="hudHelpBtn" title="Keyboard shortcuts">?</button>
-        </div>
+    <!-- Option tooltips above each tray -->
+    <div class="option-card seq-down" data-delay="5" style="top: 18%; left: 4%;" data-opt="1">
+      <h4><span class="num">1</span>PALLET TRAY</h4>
+      <ul>
+        <li>Increased product visibility</li>
+        <li>Limited communication area</li>
+        <li>Requires additional inserts</li>
+      </ul>
+    </div>
+    <div class="option-card seq-down" data-delay="6" style="top: 18%; left: 36%;" data-opt="2">
+      <h4><span class="num">2</span>SINGLE-SIDED TRAY</h4>
+      <ul>
+        <li>Limited product visibility</li>
+        <li>Larger area for printed communication</li>
+        <li>No inserts required</li>
+      </ul>
+    </div>
+    <div class="option-card seq-down" data-delay="7" style="top: 18%; left: 68%;" data-opt="3">
+      <h4><span class="num">3</span>CORNER POST TRAY</h4>
+      <ul>
+        <li>Good product visibility</li>
+        <li>Good printed communication area</li>
+        <li>No inserts required</li>
+      </ul>
     </div>
 
-    <!-- Help dialog -->
-    <dialog id="helpDialog" class="help-dialog">
-        <div class="help-content">
-            <h2>Keyboard Shortcuts</h2>
-            <table>
-                <tr><td><kbd>→</kbd> <kbd>Space</kbd></td><td>Next slide / next text</td></tr>
-                <tr><td><kbd>←</kbd></td><td>Previous slide</td></tr>
-                <tr><td><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd></td><td>Pick option on decision slide</td></tr>
-                <tr><td><kbd>F</kbd></td><td>Fullscreen</td></tr>
-                <tr><td><kbd>R</kbd></td><td>Restart game</td></tr>
-                <tr><td><kbd>Esc</kbd></td><td>Slide overview / exit fullscreen</td></tr>
-            </table>
-            <button id="helpCloseBtn">Close</button>
-        </div>
-    </dialog>
+    <!-- Trays — 3D models with 2D fallback -->
+    <div class="tray-slot" data-opt="1" tabindex="0" role="button" aria-label="Pallet tray">
+      <canvas class="tray-3d" id="tray-pallet-3d"></canvas>
+      <img class="tray-2d-fallback" id="tray-pallet-fallback" src="assets/tray-pallet.png" alt="" style="display: none;" />
+    </div>
+    <div class="tray-slot" data-opt="2" tabindex="0" role="button" aria-label="Single-sided tray">
+      <canvas class="tray-3d" id="tray-single-3d"></canvas>
+      <img class="tray-2d-fallback" id="tray-single-fallback" src="assets/tray-single.png" alt="" style="display: none;" />
+    </div>
+    <div class="tray-slot" data-opt="3" tabindex="0" role="button" aria-label="Corner post tray">
+      <canvas class="tray-3d" id="tray-corner-3d"></canvas>
+      <img class="tray-2d-fallback" id="tray-corner-fallback" src="assets/tray-corner.png" alt="" style="display: none;" />
+    </div>
 
-    <script type="module" src="game.js"></script>
+    <!-- Numbered badges -->
+    <div class="tray-num seq-pop" data-delay="9" data-num="1" style="bottom: 8%;">1</div>
+    <div class="tray-num seq-pop" data-delay="10" data-num="2" style="bottom: 8%;">2</div>
+    <div class="tray-num seq-pop" data-delay="11" data-num="3" style="bottom: 8%;">3</div>
+
+    <img class="ignite-mark" src="assets/logo-ignite.png" alt="" />
+    <div class="kb-hint"><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> Pick tray &nbsp; · &nbsp; <kbd>←</kbd><kbd>→</kbd> Browse · <kbd>Enter</kbd> Select &nbsp; · &nbsp; <kbd>Backspace</kbd> Back</div>
+  </div>
+
+  <!-- ======== LEVEL 2: Warehouse — choose paper ======== -->
+  <div class="scene level" id="scene-level2" data-level="2">
+    <div class="level-bg"><video class="level-bg-video" muted playsinline preload="auto" poster="assets/scene-warehouse.jpg"><source src="assets/scene-warehouse.mp4" type="video/mp4"></video></div>
+    <div class="brand-label tr seq-pop" data-delay="2">Shelf<b>Smart</b></div>
+    <div class="portal-door seq-down" data-delay="3" id="door2" style="right: auto; left: 3%;">
+      <img src="assets/door-green.png" alt="" />
+      <div class="light"></div>
+    </div>
+
+    <div class="option-card blue seq-down" data-delay="5" style="top: 16%; left: 18%; max-width: 28%;" data-opt="1">
+      <h4 style="color: #0066CC"><span class="num" style="background:#0066CC; color:#fff;">1</span>KRAFT PAPER</h4>
+      <ul>
+        <li>Most cost-effective option</li>
+        <li>Appearance evokes sustainability</li>
+        <li>When printed, some colors can become dull / low-contrast</li>
+      </ul>
+    </div>
+    <div class="option-card blue seq-down" data-delay="6" style="top: 16%; right: 6%; max-width: 28%;" data-opt="2">
+      <h4 style="color: #0066CC"><span class="num" style="background:#0066CC; color:#fff;">2</span>WHITE PAPER</h4>
+      <ul>
+        <li>Usually requires more investment</li>
+        <li>More accurate color tones</li>
+        <li>Glossy finish available</li>
+      </ul>
+    </div>
+
+    <!-- Paper rolls — 3D with 2D fallback -->
+    <div class="roll-slot" data-opt="1" tabindex="0" role="button" aria-label="Kraft paper">
+      <canvas class="roll-3d" id="roll-kraft-3d"></canvas>
+      <img class="roll-2d-fallback" id="roll-kraft-fallback" src="assets/paper-kraft.png" alt="" style="display: none;" />
+    </div>
+    <div class="roll-slot" data-opt="2" tabindex="0" role="button" aria-label="White paper">
+      <canvas class="roll-3d" id="roll-white-3d"></canvas>
+      <img class="roll-2d-fallback" id="roll-white-fallback" src="assets/paper-white.png" alt="" style="display: none;" />
+    </div>
+
+    <img class="ignite-mark" src="assets/logo-ignite.png" alt="" />
+    <div class="kb-hint"><kbd>1</kbd><kbd>2</kbd> Pick paper &nbsp; · &nbsp; <kbd>←</kbd><kbd>→</kbd> Browse · <kbd>Enter</kbd> Select &nbsp; · &nbsp; <kbd>Backspace</kbd> Back</div>
+  </div>
+
+  <!-- ======== LEVEL 3: Store — choose communication focus ======== -->
+  <div class="scene level" id="scene-level3" data-level="3">
+    <div class="level-bg"><video class="level-bg-video" muted playsinline preload="auto" poster="assets/scene-store.jpg"><source src="assets/scene-store.mp4" type="video/mp4"></video></div>
+    <div class="brand-label tr seq-pop" data-delay="2" style="background: #E85FCC; color: #fff;">Shelf<b>Smart</b></div>
+
+    <!-- Packaging mockup -->
+    <div class="mockup">
+      <div class="commslot" data-comm="1"><img src="assets/logo-monster.png" alt="" /><div class="num">1</div></div>
+      <div class="commslot" data-comm="2"><img src="assets/badge-queso.png" alt="" /><div class="num">2</div></div>
+      <div class="commslot" data-comm="3"><img src="assets/badge-delicious.png" alt="" /><div class="num">3</div></div>
+    </div>
+
+    <!-- Options list -->
+    <div class="level3-options">
+      <div class="option-card blue" data-opt="1" tabindex="0" role="button">
+        <h4 style="color: #C13FD9"><span class="num" style="background:#C13FD9; color:#fff;">1</span>BRAND'S LOGO</h4>
+        <ul>
+          <li>Identify products from the same family</li>
+          <li>Differentiate brand from competitors</li>
+        </ul>
+      </div>
+      <div class="option-card blue" data-opt="2" tabindex="0" role="button">
+        <h4 style="color: #C13FD9"><span class="num" style="background:#C13FD9; color:#fff;">2</span>PRODUCT'S CHARACTERISTICS</h4>
+        <ul>
+          <li>Guide the buyer to what they need</li>
+          <li>Good support for new products in the market</li>
+        </ul>
+      </div>
+      <div class="option-card blue" data-opt="3" tabindex="0" role="button">
+        <h4 style="color: #C13FD9"><span class="num" style="background:#C13FD9; color:#fff;">3</span>KEY DIFFERENTIATOR / SLOGAN</h4>
+        <ul>
+          <li>Highlight the product's unique feature</li>
+          <li>Connect with consumers with brand awareness</li>
+        </ul>
+      </div>
+    </div>
+
+    <img class="ignite-mark" src="assets/logo-ignite.png" alt="" />
+    <div class="kb-hint"><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> Pick focus &nbsp; · &nbsp; <kbd>←</kbd><kbd>→</kbd> Browse · <kbd>Enter</kbd> Select &nbsp; · &nbsp; <kbd>Backspace</kbd> Back</div>
+  </div>
+
+  <!-- ======== FINALE ======== -->
+  <div class="scene finale" id="scene-finale">
+    <h1>DESIGN COMPLETE!</h1>
+    <div class="rank" id="finale-rank">PACKAGING DESIGNER</div>
+    <div class="score-big"><span id="finale-score">0</span><span class="score-max"> / 9</span></div>
+    <div class="finale-actions">
+      <button class="start-btn" id="btn-replay">PLAY AGAIN</button>
+    </div>
+    <img class="ignite-mark" src="assets/logo-ignite.png" alt="" />
+  </div>
+
+</div>
+</div>
+
+<script>
+/* ==========================================================================
+   BUILD-A-BOX · Game logic
+   ========================================================================== */
+
+/* ---------- 1. ASSET PRELOAD ---------- */
+const ASSETS = [
+  'assets/logo-ignite.png',
+  'assets/logo-monster.png',
+  'assets/logo-monster-orange.png',
+  'assets/bag-monster.png',
+  'assets/paper-card.png',
+  'assets/pedestal.png',
+  'assets/door-red.png',
+  'assets/door-yellow.png',
+  'assets/door-green.png',
+  'assets/scene-factory.jpg',
+  'assets/scene-warehouse.jpg',
+  'assets/scene-store.jpg',
+  'assets/scene-costco.jpg',
+  'assets/tray-pallet.png',
+  'assets/tray-single.png',
+  'assets/tray-corner.png',
+  'assets/paper-kraft.png',
+  'assets/paper-white.png',
+  'assets/badge-delicious.png',
+  'assets/badge-queso.png',
+];
+
+function preload(paths, onProgress) {
+  let loaded = 0;
+  return Promise.all(paths.map(src => new Promise(resolve => {
+    const img = new Image();
+    const done = () => { loaded++; onProgress(loaded, paths.length); resolve(); };
+    img.onload = done;
+    img.onerror = done; // resolve anyway so broken asset doesn't hang game
+    img.src = src;
+  })));
+}
+
+// Kick off the background music download in parallel with image preload, so
+// it's buffered and ready to play the moment the user clicks Start (which
+// satisfies the autoplay gesture requirement).
+(function preloadBgm() {
+  const a = new Audio();
+  a.preload = 'auto';
+  a.src = a.canPlayType('audio/ogg; codecs="vorbis"') ? 'assets/bgm.ogg' : 'assets/bgm.m4a';
+  // Fire and forget — no wiring; just primes the browser cache.
+})();
+
+/* ---------- 2. SOUND SYSTEM (Web Audio API, procedural) ---------- */
+class SoundEngine {
+  constructor() {
+    this.ctx = null;
+    this.muted = false;
+    this._music = null;
+    this._musicFade = null;
+  }
+  ensureCtx() {
+    if (!this.ctx) {
+      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (this.ctx.state === 'suspended') this.ctx.resume();
+    return this.ctx;
+  }
+  setMuted(m) {
+    this.muted = m;
+    if (this._music) this._music.muted = m;
+  }
+  _tone({ freq = 440, dur = 0.1, type = 'sine', vol = 0.15, attack = 0.005, decay = null, slideTo = null }) {
+    if (this.muted) return;
+    const ctx = this.ensureCtx();
+    const t0 = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, t0);
+    if (slideTo) osc.frequency.exponentialRampToValueAtTime(slideTo, t0 + dur);
+    g.gain.setValueAtTime(0, t0);
+    g.gain.linearRampToValueAtTime(vol, t0 + attack);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    osc.connect(g).connect(ctx.destination);
+    osc.start(t0);
+    osc.stop(t0 + dur + 0.02);
+  }
+  click() { this._tone({ freq: 900, dur: 0.06, type: 'square', vol: 0.08 }); }
+  hover() { this._tone({ freq: 1400, dur: 0.04, type: 'triangle', vol: 0.05 }); }
+  select() {
+    this._tone({ freq: 600, dur: 0.1, type: 'triangle', vol: 0.12, slideTo: 1000 });
+  }
+  confirm(correct = true) {
+    if (this.muted) return;
+    const ctx = this.ensureCtx();
+    const notes = correct ? [523, 659, 784, 1047] : [523, 659];
+    notes.forEach((f, i) => {
+      setTimeout(() => this._tone({ freq: f, dur: 0.22, type: 'triangle', vol: 0.15 }), i * 90);
+    });
+  }
+  whoosh() {
+    if (this.muted) return;
+    const ctx = this.ensureCtx();
+    const t0 = ctx.currentTime;
+    const bufferSize = ctx.sampleRate * 0.8;
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
+    const src = ctx.createBufferSource();
+    src.buffer = buffer;
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(300, t0);
+    filter.frequency.exponentialRampToValueAtTime(4000, t0 + 0.6);
+    filter.Q.value = 3;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0, t0);
+    g.gain.linearRampToValueAtTime(0.25, t0 + 0.1);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.7);
+    src.connect(filter).connect(g).connect(ctx.destination);
+    src.start(t0);
+  }
+  fanfare() {
+    if (this.muted) return;
+    const notes = [523, 659, 784, 1047, 1319];
+    notes.forEach((f, i) => {
+      setTimeout(() => this._tone({ freq: f, dur: 0.4, type: 'triangle', vol: 0.18 }), i * 140);
+    });
+  }
+  startMusic() {
+    if (this.muted) return;
+    if (!this._music) {
+      const a = new Audio();
+      // Pick the format the browser actually supports. Both files contain the same loop.
+      a.src = a.canPlayType('audio/ogg; codecs="vorbis"') ? 'assets/bgm.ogg' : 'assets/bgm.m4a';
+      a.loop = true;
+      a.preload = 'auto';
+      a.volume = 0;
+      this._music = a;
+    }
+    const a = this._music;
+    a.play().catch(() => { /* autoplay blocked until user gesture */ });
+    // Fade in
+    if (this._musicFade) clearInterval(this._musicFade);
+    const target = 0.45;
+    this._musicFade = setInterval(() => {
+      a.volume = Math.min(target, a.volume + 0.03);
+      if (a.volume >= target) { clearInterval(this._musicFade); this._musicFade = null; }
+    }, 60);
+  }
+  stopMusic() {
+    if (!this._music) return;
+    const a = this._music;
+    if (this._musicFade) clearInterval(this._musicFade);
+    this._musicFade = setInterval(() => {
+      a.volume = Math.max(0, a.volume - 0.05);
+      if (a.volume <= 0) {
+        clearInterval(this._musicFade); this._musicFade = null;
+        try { a.pause(); a.currentTime = 0; } catch {}
+      }
+    }, 50);
+  }
+}
+const sfx = new SoundEngine();
+
+/* ---------- 3. FX (particles / confetti) ---------- */
+class FX {
+  constructor(canvas) {
+    this.c = canvas;
+    this.g = canvas.getContext('2d');
+    this.particles = [];
+    this.resize();
+    addEventListener('resize', () => this.resize());
+    this.loop();
+  }
+  resize() {
+    const stage = document.getElementById('stage');
+    const r = stage.getBoundingClientRect();
+    const dpr = Math.min(devicePixelRatio || 1, 2);
+    this.c.width = r.width * dpr;
+    this.c.height = r.height * dpr;
+    this.c.style.width = r.width + 'px';
+    this.c.style.height = r.height + 'px';
+    this.g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    this.w = r.width; this.h = r.height;
+  }
+  burst(x, y, count = 80, colors = null) {
+    colors = colors || ['#FFD23F', '#2FD3FF', '#FF3E3E', '#3BE06B', '#9B59FF', '#F5A623', '#FFFFFF'];
+    for (let i = 0; i < count; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const speed = 5 + Math.random() * 14;
+      this.particles.push({
+        x, y,
+        vx: Math.cos(a) * speed,
+        vy: Math.sin(a) * speed - 3,
+        size: 4 + Math.random() * 8,
+        rot: Math.random() * Math.PI,
+        vr: (Math.random() - 0.5) * 0.4,
+        life: 1,
+        decay: 0.006 + Math.random() * 0.005,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        shape: Math.random() < 0.4 ? 'circle' : 'rect',
+      });
+    }
+  }
+  loop() {
+    this.g.clearRect(0, 0, this.w, this.h);
+    for (let i = this.particles.length - 1; i >= 0; i--) {
+      const p = this.particles[i];
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += p.gravity || 0.25;
+      p.vx *= 0.995;
+      p.rot += p.vr;
+      p.life -= p.decay;
+      if (p.life <= 0 || p.y > this.h + 50) {
+        this.particles.splice(i, 1);
+        continue;
+      }
+      this.g.save();
+      this.g.globalAlpha = Math.max(0, p.life);
+      this.g.translate(p.x, p.y);
+      this.g.rotate(p.rot);
+      this.g.fillStyle = p.color;
+      if (p.shape === 'circle') {
+        this.g.beginPath();
+        this.g.arc(0, 0, p.size / 2, 0, Math.PI * 2);
+        this.g.fill();
+      } else {
+        this.g.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
+      }
+      this.g.restore();
+    }
+    requestAnimationFrame(() => this.loop());
+  }
+}
+const fx = new FX(document.getElementById('fx'));
+
+/* ---------- 4. GAME STATE & SCENES ---------- */
+const state = {
+  currentScene: 'scene-title',
+  level: 0,
+  focusIndex: 0,
+  choices: {},          // { 1: optNum, 2: optNum, 3: optNum }
+};
+
+// Score is derived from choices, never stored. Keeps back-navigation honest
+// and avoids the refund/accumulator drift bug.
+function computeScore() {
+  let total = 0;
+  for (const [lvl, opt] of Object.entries(state.choices)) {
+    const lvlData = LEVEL_DATA[lvl];
+    if (lvlData && lvlData.options[opt]) total += lvlData.options[opt].score || 0;
+  }
+  return total;
+}
+Object.defineProperty(state, 'score', { get: computeScore });
+
+const SCENE_FLOW = [
+  'scene-title',
+  'scene-congrats',
+  'scene-rules',
+  'scene-mission',
+  'scene-client',
+  'scene-create',
+  'scene-portals',
+  'scene-level1',
+  'scene-level2',
+  'scene-level3',
+  'scene-finale',
+];
+
+function goToScene(id) {
+  const current = document.getElementById(state.currentScene);
+  const next = document.getElementById(id);
+  if (!next || current === next) return;
+
+  sfx.whoosh();
+
+  current.classList.add('fading-out');
+  setTimeout(() => {
+    current.classList.remove('active', 'fading-out');
+    // Force-restart animations on the incoming scene so they replay fresh
+    restartSceneAnimations(next);
+    next.classList.add('active');
+    state.currentScene = id;
+    state.focusIndex = 0;
+    updateBackButton();
+    onSceneEnter(id);
+    updateKeyboardFocus();
+  }, 380);
+}
+
+/* Force CSS animations to restart on an element by briefly blanking
+   the animation property, forcing reflow, then restoring it. */
+function restartSceneAnimations(sceneEl) {
+  const sel = '[class*="seq-"], .door-frame, .door-light-overlay, ' +
+              '.pedestal-stack .product, .pedestal-stack .pedestal, .pedestal-stack .halo, ' +
+              '.tray-slot, .roll-slot, .mockup, .option-card, ' +
+              '.client-card, .client-bag, .portal-slot, .header-pill';
+  const els = sceneEl.querySelectorAll(sel);
+  els.forEach(el => { el.style.animation = 'none'; });
+  void sceneEl.offsetHeight; // reflow
+  els.forEach(el => { el.style.animation = ''; });
+}
+
+/* Show/hide BACK button based on current scene */
+function updateBackButton() {
+  const btn = document.getElementById('btn-back');
+  if (!btn) return;
+  // Back button shown on all scenes except title, portals (auto-transition), finale
+  const hidden = ['scene-title', 'scene-portals', 'scene-finale'];
+  btn.style.display = hidden.includes(state.currentScene) ? 'none' : 'flex';
+}
+
+/* Go back one scene in the flow (replays that scene's animations) */
+function goBack() {
+  const idx = SCENE_FLOW.indexOf(state.currentScene);
+  if (idx <= 0) return;
+  // Skip the portal scene when going back from level 1 — jump directly to create
+  let prevIdx = idx - 1;
+  if (SCENE_FLOW[prevIdx] === 'scene-portals') prevIdx--;
+  const prevId = SCENE_FLOW[prevIdx];
+  if (!prevId) return;
+  // When going back from a level, also reset that level's choice.
+  // Score is derived from state.choices, so deleting the key refunds automatically.
+  if (state.currentScene.startsWith('scene-level')) {
+    const lvl = parseInt(state.currentScene.replace('scene-level', ''), 10);
+    delete state.choices[lvl];
+  }
+  sfx.click();
+  goToScene(prevId);
+}
+
+/* ---------- LEVEL BACKGROUND VIDEOS (5s play + 2s pause = 7s cycle) ---------- */
+function playLevelBackgroundVideo(sceneId) {
+  const scene = document.getElementById(sceneId);
+  if (!scene) return;
+  const video = scene.querySelector('.level-bg-video');
+  if (!video) return;
+  // Pause any other level videos still running
+  document.querySelectorAll('.level-bg-video').forEach(v => {
+    if (v !== video) { try { v.pause(); v.currentTime = 0; } catch(e) {} }
+  });
+  // (Re)attach the end handler — wait 2s, then replay if scene still active
+  if (video._replayHandler) {
+    video.removeEventListener('ended', video._replayHandler);
+  }
+  video._replayHandler = () => {
+    if (video._pendingReplay) clearTimeout(video._pendingReplay);
+    video._pendingReplay = setTimeout(() => {
+      if (scene.classList.contains('active')) {
+        try { video.currentTime = 0; video.play().catch(() => {}); } catch(e) {}
+      }
+    }, 2000);
+  };
+  video.addEventListener('ended', video._replayHandler);
+  // Kick off the first play (autoplay needs muted; element already is)
+  try { video.currentTime = 0; video.play().catch(() => {}); } catch(e) {}
+}
+
+function pauseAllLevelBackgroundVideos() {
+  document.querySelectorAll('.level-bg-video').forEach(v => {
+    if (v._pendingReplay) { clearTimeout(v._pendingReplay); v._pendingReplay = null; }
+    try { v.pause(); v.currentTime = 0; } catch(e) {}
+  });
+}
+
+
+function onSceneEnter(id) {
+  // Per-scene entry hooks
+  // Pause level videos by default; the level branches re-start the right one.
+  pauseAllLevelBackgroundVideos();
+  if (id === 'scene-title') {
+    sfx.stopMusic();
+  }
+  if (id === 'scene-congrats') {
+    sfx.startMusic();
+  }
+  if (id === 'scene-rules') {
+    cleanup3DScene('tray-');
+    cleanup3DScene('roll-');
+    cleanup3DScene('bag-');
+    cleanup3DScene('pedestal-');
+    cleanup3DScene('portal-');
+    setTimeout(init3DRulesDoor, 200);
+  }
+  if (id === 'scene-portals') {
+    cleanup3DScene('rules-');
+    cleanup3DScene('tray-');
+    cleanup3DScene('roll-');
+    cleanup3DScene('bag-');
+    cleanup3DScene('pedestal-');
+    setTimeout(init3DPortalDoors, 200);
+    runPortalSequence();
+  }
+  if (id === 'scene-create') {
+    cleanup3DScene('tray-');
+    cleanup3DScene('roll-');
+    cleanup3DScene('rules-');
+    cleanup3DScene('portal-');
+    setTimeout(() => { init3DBag(); init3DPedestal(); }, 100);
+  }
+  if (id === 'scene-level1' || id === 'scene-level2' || id === 'scene-level3') {
+    playLevelBackgroundVideo(id);
+    // Reset door lights
+    document.querySelectorAll('.portal-door').forEach(d => d.classList.remove('on'));
+    // Reset level3 mockup state
+    if (id === 'scene-level3') {
+      document.querySelectorAll('#scene-level3 .commslot').forEach(c => c.classList.remove('active'));
+    }
+    // 3D model lifecycle per level
+    if (id === 'scene-level1') {
+      cleanup3DScene('roll-'); cleanup3DScene('bag-');
+      cleanup3DScene('pedestal-'); cleanup3DScene('rules-'); cleanup3DScene('portal-');
+      setTimeout(init3DTrays, 200);
+    }
+    if (id === 'scene-level2') {
+      cleanup3DScene('tray-'); cleanup3DScene('bag-');
+      cleanup3DScene('pedestal-'); cleanup3DScene('rules-'); cleanup3DScene('portal-');
+      setTimeout(init3DRolls, 200);
+    }
+    if (id === 'scene-level3') {
+      cleanup3DScene('tray-'); cleanup3DScene('roll-'); cleanup3DScene('bag-');
+      cleanup3DScene('pedestal-'); cleanup3DScene('rules-'); cleanup3DScene('portal-');
+    }
+    // Level 1/2 hover to show option cards
+    wireLevelHover(id);
+  }
+  if (id === 'scene-finale') {
+    cleanup3DScene('tray-'); cleanup3DScene('roll-'); cleanup3DScene('bag-');
+    cleanup3DScene('pedestal-'); cleanup3DScene('rules-'); cleanup3DScene('portal-');
+    renderFinale();
+    sfx.fanfare();
+  }
+}
+
+/* ---------- TYPEWRITER ---------- */
+let _typewriterTimer = null;
+function runTypewriter() {
+  const el = document.getElementById('mission-type');
+  const btn = document.getElementById('mission-btn');
+  if (!el) return;
+  const text = el.dataset.text || '';
+  // Reset state
+  if (_typewriterTimer) clearTimeout(_typewriterTimer);
+  el.innerHTML = '';
+  el.classList.remove('done');
+  if (btn) btn.style.opacity = '0';
+
+  // If animations are disabled (QA mode), skip straight to final state
+  const params = new URLSearchParams(location.search);
+  if (params.has('jump') || params.has('noanim')) {
+    el.innerHTML = text;
+    el.classList.add('done');
+    if (btn) btn.style.opacity = '';
+    return;
+  }
+
+  let i = 0;
+  const step = () => {
+    if (state.currentScene !== 'scene-mission') return;
+    if (i >= text.length) {
+      el.classList.add('done');
+      if (btn) btn.style.opacity = '';
+      return;
+    }
+    el.innerHTML = text.slice(0, ++i);
+    // subtle click every 3rd char
+    if (i % 5 === 0) sfx.hover();
+    _typewriterTimer = setTimeout(step, text[i-1] === ',' || text[i-1] === '.' ? 120 : 32);
+  };
+  _typewriterTimer = setTimeout(step, 400);
+}
+
+/* ---------- 3D MODELS via Three.js + GLTFLoader ---------- */
+const _3DInstances = new Map();
+
+function init3DModel(canvasId, modelPath, opts) {
+  opts = opts || {};
+  const canvas = document.getElementById(canvasId);
+  const fallbackId = opts.fallbackId;
+  const fallback = fallbackId ? document.getElementById(fallbackId) : null;
+
+  // Cleanup any previous instance for this canvas
+  if (_3DInstances.has(canvasId)) {
+    try { _3DInstances.get(canvasId).cleanup(); } catch(e) {}
+    _3DInstances.delete(canvasId);
+  }
+
+  if (typeof THREE === 'undefined' || !canvas) {
+    if (canvas) canvas.style.display = 'none';
+    if (fallback) fallback.style.display = 'block';
+    return null;
+  }
+
+  let rect = canvas.getBoundingClientRect();
+  let w = rect.width, h = rect.height;
+  if (!w || !h) {
+    const parent = canvas.parentElement;
+    const pr = parent ? parent.getBoundingClientRect() : null;
+    w = (pr && pr.width) ? pr.width * (opts.parentScale || 0.55) : 280;
+    h = (pr && pr.height) ? pr.height * (opts.parentScale || 0.55) : 380;
+  }
+
+  let scene, camera, renderer;
+  try {
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(opts.fov || 35, w / h, 0.1, 100);
+    const cam = opts.cameraPos || [0, 0, 5];
+    camera.position.set(cam[0], cam[1], cam[2]);
+    renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setSize(w, h, false);
+    renderer.setClearColor(0x000000, 0);
+    if (THREE.sRGBEncoding) renderer.outputEncoding = THREE.sRGBEncoding;
+  } catch (e) {
+    console.warn('WebGL init failed:', e);
+    if (canvas) canvas.style.display = 'none';
+    if (fallback) fallback.style.display = 'block';
+    return null;
+  }
+
+  if (canvas) canvas.style.display = 'block';
+  if (fallback) fallback.style.display = 'none';
+
+  scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+  const key = new THREE.DirectionalLight(0xffffff, 0.85);
+  key.position.set(3, 4, 5);
+  scene.add(key);
+  const fill = new THREE.DirectionalLight(0xffffff, 0.3);
+  fill.position.set(-3, 2, 2);
+  scene.add(fill);
+  const rim = new THREE.PointLight(0x7ae8ff, 0.45, 15);
+  rim.position.set(-2, 0, -2);
+  scene.add(rim);
+
+  let model = null;
+  let mixer = null;
+  const clock = new THREE.Clock();
+  let running = true;
+  let raf = null;
+
+  // Create instance early so the load callback can populate it
+  const instance = {
+    cleanup() {
+      running = false;
+      if (raf) cancelAnimationFrame(raf);
+      window.removeEventListener('resize', onResize);
+      try {
+        if (mixer) mixer.stopAllAction();
+        // Force WebGL context loss to free GPU memory immediately
+        if (renderer.forceContextLoss) renderer.forceContextLoss();
+        renderer.dispose();
+        scene.traverse(obj => {
+          if (obj.isMesh) {
+            obj.geometry && obj.geometry.dispose();
+            const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+            mats.forEach(m => { if (m) { m.map && m.map.dispose(); m.dispose(); } });
+          }
+        });
+      } catch(e) {}
+    },
+    getModel: () => model,
+    getMixer: () => mixer,
+    getActions: function() { return this._actions || []; },
+    _actions: [],
+    _clips: [],
+  };
+  _3DInstances.set(canvasId, instance);
+
+  if (typeof THREE.GLTFLoader === 'undefined') {
+    console.warn('GLTFLoader missing; 2D fallback');
+    if (canvas) canvas.style.display = 'none';
+    if (fallback) fallback.style.display = 'block';
+    return null;
+  }
+
+  const loader = new THREE.GLTFLoader();
+  loader.load(modelPath, (gltf) => {
+    if (!running) return;
+    model = gltf.scene;
+    const box = new THREE.Box3().setFromObject(model);
+    const size = box.getSize(new THREE.Vector3());
+    const center = box.getCenter(new THREE.Vector3());
+    const maxDim = Math.max(size.x, size.y, size.z) || 1;
+    const targetSize = opts.targetSize || 2.4;
+    const scale = targetSize / maxDim;
+    model.scale.setScalar(scale);
+    model.position.x = -center.x * scale;
+    model.position.y = -center.y * scale + (opts.yOffset || 0);
+    model.position.z = -center.z * scale;
+
+    model.traverse((obj) => {
+      if (obj.isMesh && obj.material) {
+        const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+        mats.forEach(m => {
+          m.side = THREE.DoubleSide;
+          if (m.map && THREE.sRGBEncoding) m.map.encoding = THREE.sRGBEncoding;
+          m.needsUpdate = true;
+        });
+      }
+    });
+
+    scene.add(model);
+
+    if (gltf.animations && gltf.animations.length > 0) {
+      mixer = new THREE.AnimationMixer(model);
+      // Store clips for later programmatic playback
+      instance._clips = gltf.animations.slice();
+      instance._actions = [];
+      gltf.animations.forEach(clip => {
+        const action = mixer.clipAction(clip);
+        instance._actions.push(action);
+        if (opts.playAnimations !== false) action.play();
+      });
+    }
+
+    if (opts.onReady) opts.onReady(model, mixer, gltf);
+  }, undefined, (err) => {
+    console.warn('GLB load failed for ' + modelPath + ':', err);
+    if (canvas) canvas.style.display = 'none';
+    if (fallback) fallback.style.display = 'block';
+  });
+
+  function animate() {
+    if (!running) return;
+    const dt = clock.getDelta();
+    if (model && opts.autoRotate !== false) {
+      model.rotation.y += dt * (opts.rotationSpeed || 0.5);
+    }
+    if (mixer) mixer.update(dt);
+    if (opts.onFrame) opts.onFrame(dt, model);
+    renderer.render(scene, camera);
+    raf = requestAnimationFrame(animate);
+  }
+
+  function onResize() {
+    const r = canvas.getBoundingClientRect();
+    if (r.width === 0 || r.height === 0) return;
+    renderer.setSize(r.width, r.height, false);
+    camera.aspect = r.width / r.height;
+    camera.updateProjectionMatrix();
+  }
+  window.addEventListener('resize', onResize);
+
+  raf = requestAnimationFrame(animate);
+  return instance;
+}
+
+function init3DBag() {
+  init3DModel('bag-3d-canvas', 'models/Bag_of_chip.glb', {
+    fallbackId: 'bag-2d-fallback',
+    targetSize: 2.4,
+    rotationSpeed: 0.4,
+    cameraPos: [0, 0, 4.2],
+    fov: 35,
+  });
+}
+
+function init3DPedestal() {
+  init3DModel('pedestal-3d-canvas', 'models/Pedestal.glb', {
+    fallbackId: 'pedestal-2d-fallback',
+    targetSize: 2.5,
+    autoRotate: false,
+    cameraPos: [0, 1.2, 3.5],
+    fov: 35,
+  });
+}
+
+function init3DPortalDoors() {
+  // Map: portal slot 1 (yellow visual) → Door3.glb
+  //      portal slot 2 (red visual)    → Door1.glb
+  //      portal slot 3 (green visual)  → Door2.glb
+  const doors = [
+    { canvasId: 'portal-door-1-3d', fallbackId: 'portal-door-1-fallback', glb: 'Door3.glb' },
+    { canvasId: 'portal-door-2-3d', fallbackId: 'portal-door-2-fallback', glb: 'Door1.glb' },
+    { canvasId: 'portal-door-3-3d', fallbackId: 'portal-door-3-fallback', glb: 'Door2.glb' },
+  ];
+  doors.forEach(d => {
+    init3DModel(d.canvasId, 'models/' + d.glb, {
+      fallbackId: d.fallbackId,
+      targetSize: 2.6,
+      autoRotate: false,
+      cameraPos: [0, 0.2, 3.5],
+      fov: 38,
+      playAnimations: false, // Hold doors closed initially
+    });
+  });
+}
+
+function playPortalDoorOpenAnimation(portalIndex) {
+  const canvasId = 'portal-door-' + (portalIndex + 1) + '-3d';
+  const inst = _3DInstances.get(canvasId);
+  if (!inst) return;
+  const actions = inst.getActions && inst.getActions();
+  if (!actions || !actions.length) return;
+  actions.forEach(action => {
+    action.reset();
+    action.setLoop(THREE.LoopOnce, 1);
+    action.clampWhenFinished = true;
+    action.play();
+  });
+}
+
+function init3DRulesDoor() {
+  init3DModel('rules-door-3d-canvas', 'models/Final_Door.glb', {
+    fallbackId: 'rules-door-2d-fallback',
+    targetSize: 2.6,
+    autoRotate: false,
+    cameraPos: [0, 0.2, 3.5],
+    fov: 38,
+    playAnimations: false, // Hold closed; play on click
+  });
+}
+
+function playRulesDoorOpenAnimation() {
+  const inst = _3DInstances.get('rules-door-3d-canvas');
+  if (!inst) return;
+  const actions = inst.getActions && inst.getActions();
+  if (!actions || !actions.length) return;
+  actions.forEach(action => {
+    action.reset();
+    action.setLoop(THREE.LoopOnce, 1);
+    action.clampWhenFinished = true;
+    action.play();
+  });
+}
+
+function init3DTrays() {
+  init3DModel('tray-pallet-3d', 'models/Pallet_Tray.glb', {
+    fallbackId: 'tray-pallet-fallback',
+    targetSize: 2.0, rotationSpeed: 0.3, cameraPos: [0, 0.4, 3.5], fov: 35,
+  });
+  init3DModel('tray-single-3d', 'models/Single_sided_tray.glb', {
+    fallbackId: 'tray-single-fallback',
+    targetSize: 2.0, rotationSpeed: 0.3, cameraPos: [0, 0.4, 3.5], fov: 35,
+  });
+  init3DModel('tray-corner-3d', 'models/Post_Tray.glb', {
+    fallbackId: 'tray-corner-fallback',
+    targetSize: 2.0, rotationSpeed: 0.3, cameraPos: [0, 0.4, 3.5], fov: 35,
+  });
+}
+
+function init3DRolls() {
+  init3DModel('roll-kraft-3d', 'models/Kraft_Roll_of_Paper.glb', {
+    fallbackId: 'roll-kraft-fallback',
+    targetSize: 2.2, rotationSpeed: 0.4, cameraPos: [0, 0, 4], fov: 35,
+  });
+  init3DModel('roll-white-3d', 'models/White_Roll_of_Paper.glb', {
+    fallbackId: 'roll-white-fallback',
+    targetSize: 2.2, rotationSpeed: 0.4, cameraPos: [0, 0, 4], fov: 35,
+  });
+}
+
+function cleanup3DScene(prefix) {
+  // Cleanup all 3D instances whose canvasId starts with prefix
+  for (const [id, inst] of _3DInstances) {
+    if (id.startsWith(prefix)) {
+      try { inst.cleanup(); } catch(e) {}
+      _3DInstances.delete(id);
+    }
+  }
+}
+
+
+/* ---------- PORTAL SCENE: user picks a door, door opens, teleport ---------- */
+function runPortalSequence() {
+  const slots = document.querySelectorAll('#scene-portals .portal-slot');
+  if (!slots.length) return;
+  const sceneEl = document.getElementById('scene-portals');
+  // Reset state
+  sceneEl.classList.remove('has-chosen');
+  slots.forEach(s => s.classList.remove('chosen', 'focused'));
+  state.portalFocusIndex = 0;
+
+  // Set initial focus on middle door (idx 1) for visual balance
+  state.portalFocusIndex = 1;
+  updatePortalFocus();
+
+  // Stagger sound cues for each door rise (informational only)
+  const params = new URLSearchParams(location.search);
+  if (params.has('jump') || params.has('noanim')) return;
+  slots.forEach((s, i) => {
+    setTimeout(() => sfx.hover(), 700 + i * 300);
+  });
+
+  // Wire click handlers
+  slots.forEach((slot, i) => {
+    slot.onclick = () => { state.portalFocusIndex = i; choosePortal(); };
+    slot.onmouseenter = () => {
+      if (!sceneEl.classList.contains('has-chosen')) {
+        state.portalFocusIndex = i;
+        updatePortalFocus();
+        sfx.hover();
+      }
+    };
+  });
+}
+
+function updatePortalFocus() {
+  const slots = document.querySelectorAll('#scene-portals .portal-slot');
+  slots.forEach((s, i) => s.classList.toggle('focused', i === state.portalFocusIndex));
+}
+
+function choosePortal() {
+  const sceneEl = document.getElementById('scene-portals');
+  if (sceneEl.classList.contains('has-chosen')) return;
+  const slots = document.querySelectorAll('#scene-portals .portal-slot');
+  const chosen = slots[state.portalFocusIndex];
+  if (!chosen) return;
+  chosen.classList.add('chosen');
+  sceneEl.classList.add('has-chosen');
+  sfx.confirm(true);
+
+  // Play 3D door-open animation at the moment the CSS thinks the door should open (~2s)
+  setTimeout(() => playPortalDoorOpenAnimation(state.portalFocusIndex), 1900);
+
+  // After the bag jump completes, teleport to Level 1
+  setTimeout(() => {
+    if (state.currentScene === 'scene-portals') {
+      teleportToScene('scene-level1');
+    }
+  }, 4800);
+}
+
+/* Teleport transition: blur+zoom out, swap scene, blur+zoom in */
+function teleportToScene(targetId) {
+  const stage = document.getElementById('stage');
+  sfx.whoosh();
+  stage.classList.add('teleporting');
+  setTimeout(() => {
+    // Swap scene while stage is near-invisible
+    const current = document.getElementById(state.currentScene);
+    const next = document.getElementById(targetId);
+    if (current) current.classList.remove('active', 'fading-out');
+    if (next) {
+      restartSceneAnimations(next);
+      next.classList.add('active');
+      state.currentScene = targetId;
+      state.focusIndex = 0;
+      updateBackButton();
+      onSceneEnter(targetId);
+      updateKeyboardFocus();
+    }
+    stage.classList.remove('teleporting');
+    stage.classList.add('teleporting-in');
+    setTimeout(() => stage.classList.remove('teleporting-in'), 850);
+  }, 900);
+}
+
+/* ---------- 5. KEYBOARD FOCUS & INPUT ---------- */
+function getFocusableOptions(sceneId) {
+  if (sceneId === 'scene-level1') return document.querySelectorAll('#scene-level1 .tray-slot');
+  if (sceneId === 'scene-level2') return document.querySelectorAll('#scene-level2 .roll-slot');
+  if (sceneId === 'scene-level3') return document.querySelectorAll('#scene-level3 .level3-options .option-card');
+  return null;
+}
+
+function updateKeyboardFocus() {
+  const options = getFocusableOptions(state.currentScene);
+  if (!options) return;
+  options.forEach((el, i) => {
+    el.classList.toggle('focused', i === state.focusIndex);
+    // sync corresponding info card too
+    if (state.currentScene === 'scene-level1') {
+      const opt = el.dataset.opt;
+      document.querySelectorAll('#scene-level1 .option-card').forEach(c => {
+        c.classList.toggle('focused', c.dataset.opt === opt);
+      });
+    }
+    if (state.currentScene === 'scene-level2') {
+      const opt = el.dataset.opt;
+      document.querySelectorAll('#scene-level2 .option-card').forEach(c => {
+        c.classList.toggle('focused', c.dataset.opt === opt);
+      });
+    }
+    if (state.currentScene === 'scene-level3') {
+      if (i === state.focusIndex) {
+        const opt = el.dataset.opt;
+        document.querySelectorAll('#scene-level3 .commslot').forEach(c => {
+          c.classList.toggle('active', c.dataset.comm === opt);
+        });
+      }
+    }
+  });
+}
+
+addEventListener('keydown', (e) => {
+  // Global: M = mute, Backspace = back
+  if (e.key === 'm' || e.key === 'M') {
+    toggleMute();
+    return;
+  }
+  if (e.key === 'Backspace') {
+    // Don't interfere with text inputs (there are none, but be safe)
+    if (document.activeElement && ['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+    e.preventDefault();
+    goBack();
+    return;
+  }
+
+  // Portal scene keyboard
+  if (state.currentScene === 'scene-portals') {
+    const sceneEl = document.getElementById('scene-portals');
+    if (sceneEl.classList.contains('has-chosen')) return; // locked after choice
+    const slots = document.querySelectorAll('#scene-portals .portal-slot');
+    if (e.key >= '1' && e.key <= '3') {
+      state.portalFocusIndex = parseInt(e.key, 10) - 1;
+      updatePortalFocus();
+      sfx.select();
+      setTimeout(choosePortal, 200);
+      e.preventDefault();
+      return;
+    }
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+      state.portalFocusIndex = (state.portalFocusIndex + 1) % slots.length;
+      updatePortalFocus();
+      sfx.hover();
+      e.preventDefault();
+      return;
+    }
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      state.portalFocusIndex = (state.portalFocusIndex - 1 + slots.length) % slots.length;
+      updatePortalFocus();
+      sfx.hover();
+      e.preventDefault();
+      return;
+    }
+    if (e.key === 'Enter' || e.key === ' ') {
+      choosePortal();
+      e.preventDefault();
+      return;
+    }
+  }
+
+  // Numbered keys on levels
+  if (state.currentScene.startsWith('scene-level')) {
+    const options = getFocusableOptions(state.currentScene);
+    if (!options) return;
+    if (e.key >= '1' && e.key <= '9') {
+      const idx = parseInt(e.key, 10) - 1;
+      if (idx < options.length) {
+        state.focusIndex = idx;
+        updateKeyboardFocus();
+        sfx.select();
+        // Single-press selects immediately
+        setTimeout(() => selectCurrentOption(), 150);
+        return;
+      }
+    }
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+      state.focusIndex = (state.focusIndex + 1) % options.length;
+      updateKeyboardFocus();
+      sfx.hover();
+      e.preventDefault();
+      return;
+    }
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      state.focusIndex = (state.focusIndex - 1 + options.length) % options.length;
+      updateKeyboardFocus();
+      sfx.hover();
+      e.preventDefault();
+      return;
+    }
+    if (e.key === 'Enter' || e.key === ' ') {
+      selectCurrentOption();
+      e.preventDefault();
+      return;
+    }
+  }
+
+  // Title: enter to start
+  if (state.currentScene === 'scene-title' && (e.key === 'Enter' || e.key === ' ')) {
+    startGame();
+    e.preventDefault();
+    return;
+  }
+
+  // Finale: enter to replay
+  if (state.currentScene === 'scene-finale' && (e.key === 'Enter' || e.key === ' ')) {
+    replay();
+    e.preventDefault();
+    return;
+  }
+
+  // Other scenes: Enter/Space = advance
+  if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowRight') {
+    const btn = document.querySelector(`#${state.currentScene} .advance, #${state.currentScene} .start-btn`);
+    if (btn) {
+      btn.click();
+      e.preventDefault();
+    }
+  }
+});
+
+/* ---------- 6. LEVEL WIRING ---------- */
+function wireLevelHover(sceneId) {
+  const options = getFocusableOptions(sceneId);
+  if (!options) return;
+  options.forEach((el, i) => {
+    el.onmouseenter = () => { state.focusIndex = i; updateKeyboardFocus(); sfx.hover(); };
+    el.onclick = () => { state.focusIndex = i; updateKeyboardFocus(); selectCurrentOption(); };
+  });
+  // Also make option-cards (tooltip yellow boxes) clickable
+  document.querySelectorAll(`#${sceneId} .option-card[data-opt]`).forEach(card => {
+    card.onclick = () => {
+      const opt = parseInt(card.dataset.opt, 10) - 1;
+      state.focusIndex = opt;
+      updateKeyboardFocus();
+      selectCurrentOption();
+    };
+    card.onmouseenter = () => {
+      const opt = parseInt(card.dataset.opt, 10) - 1;
+      state.focusIndex = opt;
+      updateKeyboardFocus();
+      sfx.hover();
+    };
+  });
+  updateKeyboardFocus();
+}
+
+function selectCurrentOption() {
+  const options = getFocusableOptions(state.currentScene);
+  if (!options) return;
+  const el = options[state.focusIndex];
+  const opt = parseInt(el.dataset.opt, 10);
+  const level = parseInt(state.currentScene.replace('scene-level', ''), 10);
+
+  // Light up the door (flashing red "ready to advance" signal)
+  const door = document.getElementById('door' + level);
+  if (door) door.classList.add('on');
+
+  // Flash the chosen card
+  document.querySelectorAll(`#${state.currentScene} .option-card[data-opt="${opt}"]`).forEach(c => {
+    c.classList.add('picked');
+  });
+
+  // Record choice; finale reads state.score (derived from choices).
+  state.choices[level] = opt;
+  sfx.confirm(true);
+
+  // Level 3 special: also light its mockup slot
+  if (state.currentScene === 'scene-level3') {
+    document.querySelectorAll('#scene-level3 .commslot').forEach(c => c.classList.remove('active'));
+    const slot = document.querySelector(`#scene-level3 .commslot[data-comm="${opt}"]`);
+    if (slot) slot.classList.add('active');
+  }
+
+  // After ~1.8s of the door flashing, teleport to the next scene
+  const nextScene = ({ 1: 'scene-level2', 2: 'scene-level3', 3: 'scene-finale' })[level];
+  setTimeout(() => {
+    if (state.currentScene === 'scene-level' + level) {
+      teleportToScene(nextScene);
+    }
+  }, 1900);
+}
+
+/* ---------- 7. LEVEL CONTENT ---------- */
+const LEVEL_DATA = {
+  1: {
+    title: 'TRAY FORMAT — CHOICE LOCKED IN',
+    emoji: '📦',
+    best: 3,
+    options: {
+      1: {
+        name: 'PALLET TRAY',
+        score: 2,
+        verdict: 'Strong choice',
+        reasoning: 'Gives Monster Snacks maximum product visibility — great for brand recognition in a club store. However, the <b>limited communication area</b> means you lose valuable real-estate for brand messaging, and the need for <b>additional inserts</b> adds cost and complexity.',
+      },
+      2: {
+        name: 'SINGLE-SIDED TRAY',
+        score: 1,
+        verdict: 'Works, but not ideal',
+        reasoning: 'Gives you a big printable canvas — good for storytelling. But for a flagship <b>snack product</b> going into a club store, <b>product visibility is critical</b>. Shoppers need to see the bag, not just a wall of print.',
+      },
+      3: {
+        name: 'CORNER POST TRAY',
+        score: 3,
+        verdict: 'BEST FIT',
+        reasoning: 'The sweet spot for Monster Snacks at a warehouse club: <b>good product visibility + good print area + no inserts</b>. You can show off the cheese-monster bag while still communicating the brand story — all in a structurally efficient format.',
+      },
+    },
+  },
+  2: {
+    title: 'PAPER — CHOICE LOCKED IN',
+    emoji: '📄',
+    best: 2,
+    options: {
+      1: {
+        name: 'KRAFT PAPER',
+        score: 1,
+        verdict: 'Cost-smart, visually risky',
+        reasoning: 'Kraft is the budget choice and signals <b>sustainability</b> — both real advantages. The problem: Monster Snacks is a <b>recognized brand</b> entering a new channel, and dull colors on kraft would muddy a flagship cheese product\'s vibrant identity. In a high-competition club store, visual punch wins.',
+      },
+      2: {
+        name: 'WHITE PAPER',
+        score: 3,
+        verdict: 'BEST FIT',
+        reasoning: 'White paper delivers <b>accurate color tones</b> and <b>glossy finish</b> — exactly what a recognized brand needs when debuting in a new channel. The higher investment pays off: the packaging looks like it belongs on a premium club-store shelf and the cheese-flavor identity stays bold.',
+      },
+    },
+  },
+  3: {
+    title: 'COMMUNICATION FOCUS — CHOICE LOCKED IN',
+    emoji: '🎯',
+    best: 1,
+    options: {
+      1: {
+        name: "BRAND'S LOGO",
+        score: 3,
+        verdict: 'BEST FIT',
+        reasoning: 'Monster Snacks is <b>already recognized</b>. In a club-store environment — bulk format, fast decisions, dozens of competing brands — a <b>big, bold brand logo</b> is the fastest path to consumer recognition. Existing fans spot it instantly; new shoppers get a clear family identity.',
+      },
+      2: {
+        name: "PRODUCT'S CHARACTERISTICS",
+        score: 2,
+        verdict: 'Strong, but secondary',
+        reasoning: 'Highlighting characteristics (like "made with real cheese") is <b>great for new products</b> that still need to earn trust. For an <b>established brand</b> entering a new channel, characteristics should support the logo — not lead it.',
+      },
+      3: {
+        name: 'KEY DIFFERENTIATOR / SLOGAN',
+        score: 1,
+        verdict: 'Nice add-on, wrong lead',
+        reasoning: 'A slogan works best when it <b>reinforces existing brand awareness</b>. Leading with it in a new channel risks burying the name that consumers already know. Consider using it as a secondary element instead.',
+      },
+    },
+  },
+};
+
+/* ---------- 8. FINALE ---------- */
+function renderFinale() {
+  const scoreEl = document.getElementById('finale-score');
+  const target = state.score;
+  const params = new URLSearchParams(location.search);
+  const fast = params.has('jump') || params.has('noanim');
+
+  // Count-up animation
+  if (fast) {
+    scoreEl.textContent = target;
+  } else {
+    scoreEl.textContent = '0';
+    const steps = 30;
+    const stepDur = 40;
+    let current = 0;
+    const counter = setInterval(() => {
+      current++;
+      const val = Math.round((current / steps) * target);
+      scoreEl.textContent = val;
+      if (current % 4 === 0) sfx.hover();
+      if (current >= steps) {
+        clearInterval(counter);
+        scoreEl.textContent = target;
+      }
+    }, stepDur);
+  }
+
+  // Rank based on total
+  let rank = 'KEEP EXPLORING';
+  if (state.score >= 8) rank = '🏆 MASTER PACKAGING DESIGNER';
+  else if (state.score >= 6) rank = '⭐ SKILLED DESIGNER';
+  else if (state.score >= 4) rank = '✨ EMERGING DESIGNER';
+  document.getElementById('finale-rank').textContent = rank;
+}
+
+/* ---------- 9. ADVANCE / CONTROLS ---------- */
+function wireAdvance() {
+  document.querySelectorAll('.advance').forEach(btn => {
+    btn.addEventListener('click', () => {
+      sfx.click();
+      const idx = SCENE_FLOW.indexOf(state.currentScene);
+      const nextId = SCENE_FLOW[idx + 1];
+      // Special case: rules door plays its 3D open animation before advancing
+      if (state.currentScene === 'scene-rules' && btn.id === 'rules-door-btn') {
+        playRulesDoorOpenAnimation();
+        setTimeout(() => { if (nextId) goToScene(nextId); }, 1100);
+      } else {
+        if (nextId) goToScene(nextId);
+      }
+    });
+  });
+}
+
+function startGame() {
+  sfx.click();
+  sfx.ensureCtx();  // user gesture unlock
+  goToScene('scene-congrats');
+}
+
+function replay() {
+  state.choices = {};
+  state.level = 0;
+  goToScene('scene-title');
+  setTimeout(updateBackButton, 400);
+}
+
+function toggleMute() {
+  sfx.setMuted(!sfx.muted);
+  const btn = document.getElementById('btn-mute');
+  btn.textContent = sfx.muted ? '🔇 SOUND' : '🔊 SOUND';
+  btn.classList.toggle('muted', sfx.muted);
+}
+
+/* ---------- 10. BOOTSTRAP ---------- */
+document.getElementById('start-game').addEventListener('click', startGame);
+document.getElementById('btn-mute').addEventListener('click', toggleMute);
+document.getElementById('btn-restart').addEventListener('click', replay);
+document.getElementById('btn-replay').addEventListener('click', replay);
+document.getElementById('btn-back').addEventListener('click', goBack);
+wireAdvance();
+
+// Hide back button initially (title scene)
+updateBackButton();
+
+/* ===== Auto-scale stage to fit viewport ===== */
+function scaleStageToFit() {
+  const stage = document.getElementById('stage');
+  if (!stage) return;
+  const designW = 1600, designH = 900;
+  const viewW = window.innerWidth;
+  const viewH = window.innerHeight;
+  const scale = Math.min(viewW / designW, viewH / designH);
+  stage.style.transform = `scale(${scale})`;
+}
+window.addEventListener('resize', scaleStageToFit);
+window.addEventListener('orientationchange', () => setTimeout(scaleStageToFit, 100));
+scaleStageToFit();
+
+/* ===== Rotate-to-landscape overlay =====
+   Shown on small portrait viewports (likely a phone held vertically).
+   The user can dismiss via "Continue anyway" — that choice persists for
+   the session so we don't keep nagging on every layout reflow. */
+const rotateOverlay = document.getElementById('rotate-overlay');
+let rotateDismissed = false;
+function checkOrientation() {
+  if (!rotateOverlay || rotateDismissed) {
+    if (rotateOverlay) rotateOverlay.classList.remove('active');
+    return;
+  }
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  // Trigger on phone-sized portrait viewports only. Tablets in portrait
+  // (>=900px short side) are wide enough to play comfortably letterboxed.
+  const isPhoneSize = Math.min(w, h) < 600;
+  const isPortrait = h > w;
+  rotateOverlay.classList.toggle('active', isPhoneSize && isPortrait);
+}
+const rotateContinue = document.getElementById('rotate-continue');
+if (rotateContinue) {
+  rotateContinue.addEventListener('click', () => {
+    rotateDismissed = true;
+    rotateOverlay.classList.remove('active');
+  });
+}
+window.addEventListener('resize', checkOrientation);
+window.addEventListener('orientationchange', () => setTimeout(checkOrientation, 100));
+checkOrientation();
+
+// Preload and boot
+const pctEl = document.getElementById('pct');
+preload(ASSETS, (n, total) => {
+  pctEl.textContent = `Loading assets · ${Math.round(100 * n / total)}%`;
+}).then(() => {
+  setTimeout(() => document.getElementById('preload').classList.add('done'), 200);
+  setTimeout(() => document.getElementById('preload').remove(), 1000);
+  document.getElementById('stage').focus();
+
+  // Dev-mode: URL ?jump=scene-id to skip straight to a scene for QA
+  const params = new URLSearchParams(location.search);
+  const jump = params.get('jump');
+  // In QA/dev modes, disable animations so final state is visible in static captures
+  if (params.has('jump') || params.has('noanim')) {
+    const style = document.createElement('style');
+    style.textContent = `
+      *, *::before, *::after {
+        animation-duration: 0.001s !important;
+        animation-delay: 0s !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001s !important;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+  if (jump && document.getElementById(jump)) {
+    // disable transitions for the jump
+    document.querySelectorAll('.scene').forEach(s => {
+      s.style.transition = 'none';
+      s.classList.remove('active', 'fading-out');
+    });
+    document.getElementById(jump).classList.add('active');
+    state.currentScene = jump;
+    onSceneEnter(jump);
+    updateKeyboardFocus();
+    updateBackButton();
+    // re-enable transitions next frame
+    requestAnimationFrame(() => {
+      document.querySelectorAll('.scene').forEach(s => s.style.transition = '');
+    });
+  }
+});
+</script>
 </body>
 </html>
