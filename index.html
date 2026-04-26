@@ -1441,7 +1441,8 @@ body {
   transform: scale(2);
   transform-origin: center;
 }
-/* Preview BEHIND the door — hidden at rest */
+/* Destination peek BEHIND the door — visible at rest, dim and slightly
+   blurred so the door reads as the focal element. Brightens when chosen. */
 .portal-preview {
   position: absolute;
   /* Size approximately to the door opening (excluding frame) */
@@ -1451,12 +1452,12 @@ body {
   height: 82%;
   overflow: hidden;
   z-index: 1;
-  background: #222;
+  background: #060c1a;
   border-radius: 2px;
-  box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.7);
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.3s;
+  box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.85);
+  opacity: 0.85;
+  filter: brightness(0.55) saturate(0.85) blur(1px);
+  transition: opacity 0.5s, filter 0.5s;
 }
 .portal-preview .preview-scene {
   position: absolute;
@@ -1519,7 +1520,7 @@ body {
 
 .portal-slot.chosen .portal-preview {
   opacity: 1;
-  visibility: visible;
+  filter: brightness(1) saturate(1) blur(0);
   transition-delay: 1.8s;
 }
 
@@ -1949,7 +1950,6 @@ body {
               exposure="1.05"
               camera-orbit="0deg 75deg 3.5m"
               field-of-view="38deg"
-              autoplay="false"
               poster="assets/rules-door.png"
               reveal="auto"
               loading="eager"></model-viewer>
@@ -2069,7 +2069,6 @@ body {
               exposure="1"
               camera-orbit="0deg 78deg 3m"
               field-of-view="38deg"
-              autoplay="false"
               poster="assets/door-yellow.png"></model-viewer>
           <div class="portal-preview" aria-hidden="true">
             <div class="preview-scene preview-factory"></div>
@@ -2092,7 +2091,6 @@ body {
               exposure="1"
               camera-orbit="0deg 78deg 3m"
               field-of-view="38deg"
-              autoplay="false"
               poster="assets/door-red.png"></model-viewer>
           <div class="portal-preview" aria-hidden="true">
             <div class="preview-scene preview-factory"></div>
@@ -2115,7 +2113,6 @@ body {
               exposure="1"
               camera-orbit="0deg 78deg 3m"
               field-of-view="38deg"
-              autoplay="false"
               poster="assets/door-green.png"></model-viewer>
           <div class="portal-preview" aria-hidden="true">
             <div class="preview-scene preview-factory"></div>
@@ -2144,7 +2141,6 @@ body {
           exposure="1"
           camera-orbit="0deg 78deg 3m"
           field-of-view="38deg"
-          autoplay="false"
           poster="assets/door-yellow.png"
           reveal="auto"></model-viewer>
       <div class="light"></div>
@@ -2250,7 +2246,6 @@ body {
           exposure="1"
           camera-orbit="0deg 78deg 3m"
           field-of-view="38deg"
-          autoplay="false"
           poster="assets/door-green.png"
           reveal="auto"></model-viewer>
       <div class="light"></div>
@@ -2326,7 +2321,6 @@ body {
           exposure="1"
           camera-orbit="0deg 78deg 3m"
           field-of-view="38deg"
-          autoplay="false"
           poster="assets/door-red.png"
           reveal="auto"></model-viewer>
       <div class="light"></div>
