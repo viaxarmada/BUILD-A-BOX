@@ -355,24 +355,17 @@ body {
 }
 .client-bag {
   width: 56%;
-  max-width: 240px;
+  max-width: 320px;
+  aspect-ratio: 3 / 4;
   margin-left: auto;
   margin-right: 4vw;
+  display: block;
+  --poster-color: transparent;
+  background: transparent;
   filter: drop-shadow(0 16px 24px rgba(0,0,0,0.5));
-  transform-style: preserve-3d;
-  perspective: 1200px;
 }
 #scene-client.active .client-bag.seq-left {
-  animation:
-    seqSlideLeft 0.8s cubic-bezier(0.17, 0.88, 0.32, 1.28) both,
-    bagRock 4s ease-in-out 1.2s infinite;
-}
-@keyframes bagRock {
-  /* Rock between -25 and +25 degrees so we never see the back */
-  0%, 100% { transform: perspective(1200px) rotateY(-25deg) translateY(0); }
-  25%      { transform: perspective(1200px) rotateY(0deg)   translateY(-8px); }
-  50%      { transform: perspective(1200px) rotateY(25deg)  translateY(0); }
-  75%      { transform: perspective(1200px) rotateY(0deg)   translateY(-8px); }
+  animation: seqSlideLeft 0.8s cubic-bezier(0.17, 0.88, 0.32, 1.28) both;
 }
 .client-card {
   position: relative;
@@ -1908,7 +1901,7 @@ body {
       </div>
       <button class="rules-door-btn advance" id="rules-door-btn" aria-label="Enter next scene">
         <div class="door-frame">
-          <img class="rules-door-img" src="assets/door-red.png" alt="Red portal door" />
+          <img class="rules-door-img" src="assets/rules-door.png" alt="Red portal door" />
           <div class="door-light-overlay"></div>
         </div>
         <span class="rules-door-caption">CLICK TO ENTER</span>
@@ -1935,7 +1928,21 @@ body {
   <!-- ======== SCENE: CLIENT ======== -->
   <div class="scene scene-client" id="scene-client">
     <div class="header-pill seq-pill">LOADING <span class="dots">· · · ·</span></div>
-    <img class="client-bag seq-left" data-delay="2" src="assets/bag-monster.png" alt="Monster Snacks bag" />
+    <model-viewer
+        class="client-bag seq-left"
+        data-delay="2"
+        src="models/Bag_of_chip.glb"
+        alt="Monster Snacks bag"
+        auto-rotate
+        rotation-per-second="35deg"
+        camera-controls
+        interaction-prompt="none"
+        shadow-intensity="0.6"
+        exposure="1.1"
+        camera-orbit="0deg 75deg 4.5m"
+        field-of-view="35deg"
+        poster="assets/bag-monster.png"
+        reveal="auto"></model-viewer>
     <div class="client-card seq-down" data-delay="3">
       <h3>Client: <img src="assets/logo-monster.png" class="brand-logo" alt="Monster Snacks" /></h3>
       <div class="client-stars">★ ★ ★ ★ ☆</div>
