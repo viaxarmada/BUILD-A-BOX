@@ -5,38 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
 <title>BUILD-A-BOX · Smurfit Westrock</title>
 <link rel="preload" as="image" href="assets/scene-factory.jpg" />
-<script>
-// Three.js + GLTFLoader: try local vendor copy first, fall back to CDN.
-(function loadThreeStack() {
-  function load(src, onload, onerror) {
-    const s = document.createElement('script');
-    s.src = src;
-    s.async = false;
-    if (onload) s.onload = onload;
-    if (onerror) s.onerror = onerror;
-    document.head.appendChild(s);
-  }
-  function loadGLTF() {
-    load('assets/GLTFLoader.js', null, () => {
-      // jsDelivr mirrors the full npm package including examples/js/loaders/
-      load('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js', null, () => {
-        // unpkg fallback
-        load('https://unpkg.com/three@0.128.0/examples/js/loaders/GLTFLoader.js', null, () => {
-          console.warn('GLTFLoader failed to load from all sources; 3D models will fall back to 2D images');
-        });
-      });
-    });
-  }
-  load('assets/three.min.js', loadGLTF, () => {
-    load('https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js', loadGLTF, () => {
-      // jsDelivr fallback for three.js itself
-      load('https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js', loadGLTF, () => {
-        console.warn('Three.js failed to load from all sources; falling back to 2D');
-      });
-    });
-  });
-})();
-</script>
+<!--
+  Google's <model-viewer> handles all GLB rendering. It's a single web
+  component: declarative `<model-viewer src="..." auto-rotate camera-controls>`
+  with built-in HDRI lighting, touch-friendly orbit/pinch, animation control,
+  and lazy loading. Replaces the previous Three.js + GLTFLoader stack.
+-->
+<script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer@3.5.0/dist/model-viewer.min.js"></script>
 <style>
 /* ========================================================================
    BUILD-A-BOX · Interactive educational game
@@ -591,6 +566,8 @@ body {
   width: 80%;
   aspect-ratio: 2 / 1;
   display: block;
+  --poster-color: transparent;
+  background: transparent;
 }
 .pedestal-stack .product {
   position: absolute;
@@ -609,6 +586,9 @@ body {
   width: 55%;
   height: 55%;
   opacity: 0;
+  display: block;
+  --poster-color: transparent;
+  background: transparent;
   filter: drop-shadow(0 0 30px rgba(122, 232, 255, 0.6)) drop-shadow(0 15px 20px rgba(0,0,0,0.4));
 }
 @keyframes productFloat {
@@ -777,8 +757,9 @@ body {
   opacity: 0;
 }
 .tray-slot img,
-.tray-slot canvas { width: 100%; display: block; }
-.tray-slot canvas { aspect-ratio: 1 / 1; }
+.tray-slot canvas,
+.tray-slot model-viewer { width: 100%; display: block; }
+.tray-slot model-viewer { aspect-ratio: 1 / 1; --poster-color: transparent; background: transparent; }
 .tray-slot:hover, .tray-slot.focused { transform: translateY(-8px) scale(1.04); }
 .tray-slot[data-opt="1"] { left: 10%; }
 .tray-slot[data-opt="2"] { left: 38%; }
@@ -825,8 +806,9 @@ body {
   opacity: 0;
 }
 .roll-slot img,
-.roll-slot canvas { width: 100%; display: block; filter: drop-shadow(0 20px 25px rgba(0,0,0,0.35)); }
-.roll-slot canvas { aspect-ratio: 1 / 1.3; }
+.roll-slot canvas,
+.roll-slot model-viewer { width: 100%; display: block; filter: drop-shadow(0 20px 25px rgba(0,0,0,0.35)); }
+.roll-slot model-viewer { aspect-ratio: 1 / 1.3; --poster-color: transparent; background: transparent; }
 .roll-slot:hover, .roll-slot.focused { transform: translateY(-8px) scale(1.04); }
 .roll-slot[data-opt="1"] { left: 24%; }
 .roll-slot[data-opt="2"] { left: 55%; }
@@ -1427,6 +1409,16 @@ body {
   display: block;
   position: relative;
   z-index: 3;
+  --poster-color: transparent;
+  background: transparent;
+}
+/* Rules door uses model-viewer too */
+.rules-door-3d {
+  width: 100%;
+  height: 100%;
+  display: block;
+  --poster-color: transparent;
+  background: transparent;
 }
 /* Preview BEHIND the door — hidden at rest */
 .portal-preview {
@@ -1920,8 +1912,22 @@ body {
       </div>
       <button class="rules-door-btn advance" id="rules-door-btn" aria-label="Enter next scene">
         <div class="door-frame">
-          <canvas class="rules-door-3d" id="rules-door-3d-canvas" aria-label="Red portal door"></canvas>
-          <img class="rules-door-2d-fallback" id="rules-door-2d-fallback" src="assets/door-red.png" alt="Red portal door with light" style="display: none;" />
+          <model-viewer
+              id="rules-door-mv"
+              class="rules-door-3d"
+              src="models/Final_Door.glb"
+              alt="Red portal door"
+              camera-controls
+              disable-zoom
+              interaction-prompt="none"
+              shadow-intensity="0.6"
+              exposure="1.05"
+              camera-orbit="0deg 75deg 4m"
+              field-of-view="38deg"
+              autoplay="false"
+              poster="assets/door-red.png"
+              reveal="auto"
+              loading="eager"></model-viewer>
           <div class="door-light-overlay"></div>
         </div>
         <span class="rules-door-caption">CLICK TO ENTER</span>
@@ -1976,10 +1982,31 @@ body {
     </div>
     <div class="pedestal-stack">
       <div class="halo"></div>
-      <canvas class="pedestal-3d" id="pedestal-3d-canvas" aria-label="Pedestal turntable"></canvas>
-      <img class="pedestal pedestal-2d-fallback" id="pedestal-2d-fallback" src="assets/pedestal.png" alt="" style="display: none;" />
-      <canvas class="product-3d" id="bag-3d-canvas" aria-label="Monster Snacks bag (3D)"></canvas>
-      <img class="product product-2d-fallback" id="bag-2d-fallback" src="assets/bag-monster.png" alt="" style="display: none;" />
+      <model-viewer
+          class="pedestal-3d"
+          src="models/Pedestal.glb"
+          alt="Pedestal turntable"
+          camera-controls
+          disable-zoom
+          interaction-prompt="none"
+          shadow-intensity="0.4"
+          exposure="1"
+          camera-orbit="0deg 78deg 4m"
+          field-of-view="35deg"
+          poster="assets/pedestal.png"></model-viewer>
+      <model-viewer
+          class="product-3d"
+          src="models/Bag_of_chip.glb"
+          alt="Monster Snacks bag"
+          auto-rotate
+          rotation-per-second="40deg"
+          camera-controls
+          interaction-prompt="none"
+          shadow-intensity="0.6"
+          exposure="1.1"
+          camera-orbit="0deg 75deg 4.5m"
+          field-of-view="35deg"
+          poster="assets/bag-monster.png"></model-viewer>
     </div>
     <img class="ignite-mark" src="assets/logo-ignite.png" alt="" />
     <div class="kb-hint"><kbd>Enter</kbd> Start designing &nbsp; · &nbsp; <kbd>Backspace</kbd> Back</div>
@@ -1991,8 +2018,20 @@ body {
     <div class="portals-row">
       <button class="portal-slot" data-portal="1" data-glb="Door3.glb" aria-label="Enter portal 1">
         <div class="portal-door-container">
-          <canvas class="portal-door-3d" id="portal-door-1-3d"></canvas>
-          <img class="portal-door-leaf portal-door-2d-fallback" id="portal-door-1-fallback" src="assets/door-yellow.png" alt="" style="display: none;" />
+          <model-viewer
+              class="portal-door-3d portal-door-mv"
+              data-portal-mv="1"
+              src="models/Door3.glb"
+              alt="Yellow portal door"
+              camera-controls
+              disable-zoom
+              interaction-prompt="none"
+              shadow-intensity="0.5"
+              exposure="1"
+              camera-orbit="0deg 78deg 3.8m"
+              field-of-view="38deg"
+              autoplay="false"
+              poster="assets/door-yellow.png"></model-viewer>
           <div class="portal-preview" aria-hidden="true">
             <div class="preview-scene preview-factory"></div>
             <img class="preview-monster preview-monster-blue" src="assets/bag-monster.png" alt="" />
@@ -2002,8 +2041,20 @@ body {
       </button>
       <button class="portal-slot" data-portal="2" data-glb="Door1.glb" aria-label="Enter portal 2">
         <div class="portal-door-container">
-          <canvas class="portal-door-3d" id="portal-door-2-3d"></canvas>
-          <img class="portal-door-leaf portal-door-2d-fallback" id="portal-door-2-fallback" src="assets/door-red.png" alt="" style="display: none;" />
+          <model-viewer
+              class="portal-door-3d portal-door-mv"
+              data-portal-mv="2"
+              src="models/Door1.glb"
+              alt="Red portal door"
+              camera-controls
+              disable-zoom
+              interaction-prompt="none"
+              shadow-intensity="0.5"
+              exposure="1"
+              camera-orbit="0deg 78deg 3.8m"
+              field-of-view="38deg"
+              autoplay="false"
+              poster="assets/door-red.png"></model-viewer>
           <div class="portal-preview" aria-hidden="true">
             <div class="preview-scene preview-factory"></div>
             <img class="preview-monster preview-monster-blue" src="assets/bag-monster.png" alt="" />
@@ -2013,8 +2064,20 @@ body {
       </button>
       <button class="portal-slot" data-portal="3" data-glb="Door2.glb" aria-label="Enter portal 3">
         <div class="portal-door-container">
-          <canvas class="portal-door-3d" id="portal-door-3-3d"></canvas>
-          <img class="portal-door-leaf portal-door-2d-fallback" id="portal-door-3-fallback" src="assets/door-green.png" alt="" style="display: none;" />
+          <model-viewer
+              class="portal-door-3d portal-door-mv"
+              data-portal-mv="3"
+              src="models/Door2.glb"
+              alt="Green portal door"
+              camera-controls
+              disable-zoom
+              interaction-prompt="none"
+              shadow-intensity="0.5"
+              exposure="1"
+              camera-orbit="0deg 78deg 3.8m"
+              field-of-view="38deg"
+              autoplay="false"
+              poster="assets/door-green.png"></model-viewer>
           <div class="portal-preview" aria-hidden="true">
             <div class="preview-scene preview-factory"></div>
             <img class="preview-monster preview-monster-blue" src="assets/bag-monster.png" alt="" />
@@ -2062,18 +2125,54 @@ body {
       </ul>
     </div>
 
-    <!-- Trays — 3D models with 2D fallback -->
+    <!-- Trays — model-viewer with poster fallback -->
     <div class="tray-slot" data-opt="1" tabindex="0" role="button" aria-label="Pallet tray">
-      <canvas class="tray-3d" id="tray-pallet-3d"></canvas>
-      <img class="tray-2d-fallback" id="tray-pallet-fallback" src="assets/tray-pallet.png" alt="" style="display: none;" />
+      <model-viewer
+          class="tray-3d"
+          src="models/Pallet_Tray.glb"
+          alt="Pallet tray"
+          auto-rotate
+          rotation-per-second="30deg"
+          camera-controls
+          interaction-prompt="none"
+          shadow-intensity="0.5"
+          exposure="1.05"
+          camera-orbit="0deg 75deg 4m"
+          field-of-view="35deg"
+          poster="assets/tray-pallet.png"
+          reveal="auto"></model-viewer>
     </div>
     <div class="tray-slot" data-opt="2" tabindex="0" role="button" aria-label="Single-sided tray">
-      <canvas class="tray-3d" id="tray-single-3d"></canvas>
-      <img class="tray-2d-fallback" id="tray-single-fallback" src="assets/tray-single.png" alt="" style="display: none;" />
+      <model-viewer
+          class="tray-3d"
+          src="models/Single_sided_tray.glb"
+          alt="Single-sided tray"
+          auto-rotate
+          rotation-per-second="30deg"
+          camera-controls
+          interaction-prompt="none"
+          shadow-intensity="0.5"
+          exposure="1.05"
+          camera-orbit="0deg 75deg 4m"
+          field-of-view="35deg"
+          poster="assets/tray-single.png"
+          reveal="auto"></model-viewer>
     </div>
     <div class="tray-slot" data-opt="3" tabindex="0" role="button" aria-label="Corner post tray">
-      <canvas class="tray-3d" id="tray-corner-3d"></canvas>
-      <img class="tray-2d-fallback" id="tray-corner-fallback" src="assets/tray-corner.png" alt="" style="display: none;" />
+      <model-viewer
+          class="tray-3d"
+          src="models/Post_Tray.glb"
+          alt="Corner post tray"
+          auto-rotate
+          rotation-per-second="30deg"
+          camera-controls
+          interaction-prompt="none"
+          shadow-intensity="0.5"
+          exposure="1.05"
+          camera-orbit="0deg 75deg 4m"
+          field-of-view="35deg"
+          poster="assets/tray-corner.png"
+          reveal="auto"></model-viewer>
     </div>
 
     <!-- Numbered badges -->
@@ -2111,14 +2210,38 @@ body {
       </ul>
     </div>
 
-    <!-- Paper rolls — 3D with 2D fallback -->
+    <!-- Paper rolls — model-viewer with poster fallback -->
     <div class="roll-slot" data-opt="1" tabindex="0" role="button" aria-label="Kraft paper">
-      <canvas class="roll-3d" id="roll-kraft-3d"></canvas>
-      <img class="roll-2d-fallback" id="roll-kraft-fallback" src="assets/paper-kraft.png" alt="" style="display: none;" />
+      <model-viewer
+          class="roll-3d"
+          src="models/Kraft_Roll_of_Paper.glb"
+          alt="Kraft paper roll"
+          auto-rotate
+          rotation-per-second="40deg"
+          camera-controls
+          interaction-prompt="none"
+          shadow-intensity="0.5"
+          exposure="1.05"
+          camera-orbit="0deg 75deg 4.5m"
+          field-of-view="35deg"
+          poster="assets/paper-kraft.png"
+          reveal="auto"></model-viewer>
     </div>
     <div class="roll-slot" data-opt="2" tabindex="0" role="button" aria-label="White paper">
-      <canvas class="roll-3d" id="roll-white-3d"></canvas>
-      <img class="roll-2d-fallback" id="roll-white-fallback" src="assets/paper-white.png" alt="" style="display: none;" />
+      <model-viewer
+          class="roll-3d"
+          src="models/White_Roll_of_Paper.glb"
+          alt="White paper roll"
+          auto-rotate
+          rotation-per-second="40deg"
+          camera-controls
+          interaction-prompt="none"
+          shadow-intensity="0.5"
+          exposure="1.05"
+          camera-orbit="0deg 75deg 4.5m"
+          field-of-view="35deg"
+          poster="assets/paper-white.png"
+          reveal="auto"></model-viewer>
     </div>
 
     <img class="ignite-mark" src="assets/logo-ignite.png" alt="" />
@@ -2548,68 +2671,21 @@ function pauseAllLevelBackgroundVideos() {
 
 
 function onSceneEnter(id) {
-  // Per-scene entry hooks
-  // Pause level videos by default; the level branches re-start the right one.
+  // Per-scene entry hooks. <model-viewer> handles its own GLB lifecycle;
+  // we just toggle scene-level UI state and start/stop level video.
   pauseAllLevelBackgroundVideos();
-  if (id === 'scene-title') {
-    sfx.stopMusic();
-  }
-  if (id === 'scene-congrats') {
-    sfx.startMusic();
-  }
-  if (id === 'scene-rules') {
-    cleanup3DScene('tray-');
-    cleanup3DScene('roll-');
-    cleanup3DScene('bag-');
-    cleanup3DScene('pedestal-');
-    cleanup3DScene('portal-');
-    setTimeout(init3DRulesDoor, 200);
-  }
-  if (id === 'scene-portals') {
-    cleanup3DScene('rules-');
-    cleanup3DScene('tray-');
-    cleanup3DScene('roll-');
-    cleanup3DScene('bag-');
-    cleanup3DScene('pedestal-');
-    setTimeout(init3DPortalDoors, 200);
-    runPortalSequence();
-  }
-  if (id === 'scene-create') {
-    cleanup3DScene('tray-');
-    cleanup3DScene('roll-');
-    cleanup3DScene('rules-');
-    cleanup3DScene('portal-');
-    setTimeout(() => { init3DBag(); init3DPedestal(); }, 100);
-  }
+  if (id === 'scene-title') sfx.stopMusic();
+  if (id === 'scene-congrats') sfx.startMusic();
+  if (id === 'scene-portals') runPortalSequence();
   if (id === 'scene-level1' || id === 'scene-level2' || id === 'scene-level3') {
     playLevelBackgroundVideo(id);
-    // Reset door lights
     document.querySelectorAll('.portal-door').forEach(d => d.classList.remove('on'));
-    // Reset level3 mockup state
     if (id === 'scene-level3') {
       document.querySelectorAll('#scene-level3 .commslot').forEach(c => c.classList.remove('active'));
     }
-    // 3D model lifecycle per level
-    if (id === 'scene-level1') {
-      cleanup3DScene('roll-'); cleanup3DScene('bag-');
-      cleanup3DScene('pedestal-'); cleanup3DScene('rules-'); cleanup3DScene('portal-');
-      setTimeout(init3DTrays, 200);
-    }
-    if (id === 'scene-level2') {
-      cleanup3DScene('tray-'); cleanup3DScene('bag-');
-      cleanup3DScene('pedestal-'); cleanup3DScene('rules-'); cleanup3DScene('portal-');
-      setTimeout(init3DRolls, 200);
-    }
-    if (id === 'scene-level3') {
-      cleanup3DScene('tray-'); cleanup3DScene('roll-'); cleanup3DScene('bag-');
-      cleanup3DScene('pedestal-'); cleanup3DScene('rules-'); cleanup3DScene('portal-');
-    }
-    // Level 1/2 hover to show option cards
     wireLevelHover(id);
   }
   if (id === 'scene-finale') {
-    cleanup3DScene('tray-'); cleanup3DScene('roll-'); cleanup3DScene('bag-');
-    cleanup3DScene('pedestal-'); cleanup3DScene('rules-'); cleanup3DScene('portal-');
     renderFinale();
     sfx.fanfare();
   }
@@ -2653,293 +2729,28 @@ function runTypewriter() {
   _typewriterTimer = setTimeout(step, 400);
 }
 
-/* ---------- 3D MODELS via Three.js + GLTFLoader ---------- */
-const _3DInstances = new Map();
-
-function init3DModel(canvasId, modelPath, opts) {
-  opts = opts || {};
-  const canvas = document.getElementById(canvasId);
-  const fallbackId = opts.fallbackId;
-  const fallback = fallbackId ? document.getElementById(fallbackId) : null;
-
-  // Cleanup any previous instance for this canvas
-  if (_3DInstances.has(canvasId)) {
-    try { _3DInstances.get(canvasId).cleanup(); } catch(e) {}
-    _3DInstances.delete(canvasId);
-  }
-
-  if (typeof THREE === 'undefined' || !canvas) {
-    if (canvas) canvas.style.display = 'none';
-    if (fallback) fallback.style.display = 'block';
-    return null;
-  }
-
-  let rect = canvas.getBoundingClientRect();
-  let w = rect.width, h = rect.height;
-  if (!w || !h) {
-    const parent = canvas.parentElement;
-    const pr = parent ? parent.getBoundingClientRect() : null;
-    w = (pr && pr.width) ? pr.width * (opts.parentScale || 0.55) : 280;
-    h = (pr && pr.height) ? pr.height * (opts.parentScale || 0.55) : 380;
-  }
-
-  let scene, camera, renderer;
-  try {
-    scene = new THREE.Scene();
-    camera = new THREE.PerspectiveCamera(opts.fov || 35, w / h, 0.1, 100);
-    const cam = opts.cameraPos || [0, 0, 5];
-    camera.position.set(cam[0], cam[1], cam[2]);
-    renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-    renderer.setSize(w, h, false);
-    renderer.setClearColor(0x000000, 0);
-    if (THREE.sRGBEncoding) renderer.outputEncoding = THREE.sRGBEncoding;
-  } catch (e) {
-    console.warn('WebGL init failed:', e);
-    if (canvas) canvas.style.display = 'none';
-    if (fallback) fallback.style.display = 'block';
-    return null;
-  }
-
-  if (canvas) canvas.style.display = 'block';
-  if (fallback) fallback.style.display = 'none';
-
-  scene.add(new THREE.AmbientLight(0xffffff, 0.7));
-  const key = new THREE.DirectionalLight(0xffffff, 0.85);
-  key.position.set(3, 4, 5);
-  scene.add(key);
-  const fill = new THREE.DirectionalLight(0xffffff, 0.3);
-  fill.position.set(-3, 2, 2);
-  scene.add(fill);
-  const rim = new THREE.PointLight(0x7ae8ff, 0.45, 15);
-  rim.position.set(-2, 0, -2);
-  scene.add(rim);
-
-  let model = null;
-  let mixer = null;
-  const clock = new THREE.Clock();
-  let running = true;
-  let raf = null;
-
-  // Create instance early so the load callback can populate it
-  const instance = {
-    cleanup() {
-      running = false;
-      if (raf) cancelAnimationFrame(raf);
-      window.removeEventListener('resize', onResize);
-      try {
-        if (mixer) mixer.stopAllAction();
-        // Force WebGL context loss to free GPU memory immediately
-        if (renderer.forceContextLoss) renderer.forceContextLoss();
-        renderer.dispose();
-        scene.traverse(obj => {
-          if (obj.isMesh) {
-            obj.geometry && obj.geometry.dispose();
-            const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
-            mats.forEach(m => { if (m) { m.map && m.map.dispose(); m.dispose(); } });
-          }
-        });
-      } catch(e) {}
-    },
-    getModel: () => model,
-    getMixer: () => mixer,
-    getActions: function() { return this._actions || []; },
-    _actions: [],
-    _clips: [],
+/* ---------- 3D MODELS via Google's <model-viewer> ----------
+   Each .glb is mounted as a <model-viewer> in the markup; the component
+   handles WebGL setup, lighting, camera controls, and lifecycle. The only
+   bit of JS we own is triggering the door-open animation on the chosen
+   door — model-viewer exposes the same animation clips via its
+   `availableAnimations` getter and a `play()` method. */
+function playGlbOpenAnimation(mvEl) {
+  if (!mvEl) return;
+  // model-viewer parses GLB animations asynchronously. If clips aren't
+  // ready yet, wait one load tick and retry.
+  const trigger = () => {
+    const clips = mvEl.availableAnimations || [];
+    if (!clips.length) return;
+    // Pick the first non-default clip ('Action', 'Open', etc. — anything
+    // other than the implicit empty default works).
+    mvEl.animationName = clips[0];
+    try { mvEl.play({ repetitions: 1 }); } catch (e) { /* ignore */ }
   };
-  _3DInstances.set(canvasId, instance);
-
-  if (typeof THREE.GLTFLoader === 'undefined') {
-    console.warn('GLTFLoader missing; 2D fallback');
-    if (canvas) canvas.style.display = 'none';
-    if (fallback) fallback.style.display = 'block';
-    return null;
-  }
-
-  const loader = new THREE.GLTFLoader();
-  loader.load(modelPath, (gltf) => {
-    if (!running) return;
-    model = gltf.scene;
-    const box = new THREE.Box3().setFromObject(model);
-    const size = box.getSize(new THREE.Vector3());
-    const center = box.getCenter(new THREE.Vector3());
-    const maxDim = Math.max(size.x, size.y, size.z) || 1;
-    const targetSize = opts.targetSize || 2.4;
-    const scale = targetSize / maxDim;
-    model.scale.setScalar(scale);
-    model.position.x = -center.x * scale;
-    model.position.y = -center.y * scale + (opts.yOffset || 0);
-    model.position.z = -center.z * scale;
-
-    model.traverse((obj) => {
-      if (obj.isMesh && obj.material) {
-        const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
-        mats.forEach(m => {
-          m.side = THREE.DoubleSide;
-          if (m.map && THREE.sRGBEncoding) m.map.encoding = THREE.sRGBEncoding;
-          m.needsUpdate = true;
-        });
-      }
-    });
-
-    scene.add(model);
-
-    if (gltf.animations && gltf.animations.length > 0) {
-      mixer = new THREE.AnimationMixer(model);
-      // Store clips for later programmatic playback
-      instance._clips = gltf.animations.slice();
-      instance._actions = [];
-      gltf.animations.forEach(clip => {
-        const action = mixer.clipAction(clip);
-        instance._actions.push(action);
-        if (opts.playAnimations !== false) action.play();
-      });
-    }
-
-    if (opts.onReady) opts.onReady(model, mixer, gltf);
-  }, undefined, (err) => {
-    console.warn('GLB load failed for ' + modelPath + ':', err);
-    if (canvas) canvas.style.display = 'none';
-    if (fallback) fallback.style.display = 'block';
-  });
-
-  function animate() {
-    if (!running) return;
-    const dt = clock.getDelta();
-    if (model && opts.autoRotate !== false) {
-      model.rotation.y += dt * (opts.rotationSpeed || 0.5);
-    }
-    if (mixer) mixer.update(dt);
-    if (opts.onFrame) opts.onFrame(dt, model);
-    renderer.render(scene, camera);
-    raf = requestAnimationFrame(animate);
-  }
-
-  function onResize() {
-    const r = canvas.getBoundingClientRect();
-    if (r.width === 0 || r.height === 0) return;
-    renderer.setSize(r.width, r.height, false);
-    camera.aspect = r.width / r.height;
-    camera.updateProjectionMatrix();
-  }
-  window.addEventListener('resize', onResize);
-
-  raf = requestAnimationFrame(animate);
-  return instance;
-}
-
-function init3DBag() {
-  init3DModel('bag-3d-canvas', 'models/Bag_of_chip.glb', {
-    fallbackId: 'bag-2d-fallback',
-    targetSize: 2.4,
-    rotationSpeed: 0.4,
-    cameraPos: [0, 0, 4.2],
-    fov: 35,
-  });
-}
-
-function init3DPedestal() {
-  init3DModel('pedestal-3d-canvas', 'models/Pedestal.glb', {
-    fallbackId: 'pedestal-2d-fallback',
-    targetSize: 2.5,
-    autoRotate: false,
-    cameraPos: [0, 1.2, 3.5],
-    fov: 35,
-  });
-}
-
-function init3DPortalDoors() {
-  // Map: portal slot 1 (yellow visual) → Door3.glb
-  //      portal slot 2 (red visual)    → Door1.glb
-  //      portal slot 3 (green visual)  → Door2.glb
-  const doors = [
-    { canvasId: 'portal-door-1-3d', fallbackId: 'portal-door-1-fallback', glb: 'Door3.glb' },
-    { canvasId: 'portal-door-2-3d', fallbackId: 'portal-door-2-fallback', glb: 'Door1.glb' },
-    { canvasId: 'portal-door-3-3d', fallbackId: 'portal-door-3-fallback', glb: 'Door2.glb' },
-  ];
-  doors.forEach(d => {
-    init3DModel(d.canvasId, 'models/' + d.glb, {
-      fallbackId: d.fallbackId,
-      targetSize: 2.6,
-      autoRotate: false,
-      cameraPos: [0, 0.2, 3.5],
-      fov: 38,
-      playAnimations: false, // Hold doors closed initially
-    });
-  });
-}
-
-function playPortalDoorOpenAnimation(portalIndex) {
-  const canvasId = 'portal-door-' + (portalIndex + 1) + '-3d';
-  const inst = _3DInstances.get(canvasId);
-  if (!inst) return;
-  const actions = inst.getActions && inst.getActions();
-  if (!actions || !actions.length) return;
-  actions.forEach(action => {
-    action.reset();
-    action.setLoop(THREE.LoopOnce, 1);
-    action.clampWhenFinished = true;
-    action.play();
-  });
-}
-
-function init3DRulesDoor() {
-  init3DModel('rules-door-3d-canvas', 'models/Final_Door.glb', {
-    fallbackId: 'rules-door-2d-fallback',
-    targetSize: 2.6,
-    autoRotate: false,
-    cameraPos: [0, 0.2, 3.5],
-    fov: 38,
-    playAnimations: false, // Hold closed; play on click
-  });
-}
-
-function playRulesDoorOpenAnimation() {
-  const inst = _3DInstances.get('rules-door-3d-canvas');
-  if (!inst) return;
-  const actions = inst.getActions && inst.getActions();
-  if (!actions || !actions.length) return;
-  actions.forEach(action => {
-    action.reset();
-    action.setLoop(THREE.LoopOnce, 1);
-    action.clampWhenFinished = true;
-    action.play();
-  });
-}
-
-function init3DTrays() {
-  init3DModel('tray-pallet-3d', 'models/Pallet_Tray.glb', {
-    fallbackId: 'tray-pallet-fallback',
-    targetSize: 2.0, rotationSpeed: 0.3, cameraPos: [0, 0.4, 3.5], fov: 35,
-  });
-  init3DModel('tray-single-3d', 'models/Single_sided_tray.glb', {
-    fallbackId: 'tray-single-fallback',
-    targetSize: 2.0, rotationSpeed: 0.3, cameraPos: [0, 0.4, 3.5], fov: 35,
-  });
-  init3DModel('tray-corner-3d', 'models/Post_Tray.glb', {
-    fallbackId: 'tray-corner-fallback',
-    targetSize: 2.0, rotationSpeed: 0.3, cameraPos: [0, 0.4, 3.5], fov: 35,
-  });
-}
-
-function init3DRolls() {
-  init3DModel('roll-kraft-3d', 'models/Kraft_Roll_of_Paper.glb', {
-    fallbackId: 'roll-kraft-fallback',
-    targetSize: 2.2, rotationSpeed: 0.4, cameraPos: [0, 0, 4], fov: 35,
-  });
-  init3DModel('roll-white-3d', 'models/White_Roll_of_Paper.glb', {
-    fallbackId: 'roll-white-fallback',
-    targetSize: 2.2, rotationSpeed: 0.4, cameraPos: [0, 0, 4], fov: 35,
-  });
-}
-
-function cleanup3DScene(prefix) {
-  // Cleanup all 3D instances whose canvasId starts with prefix
-  for (const [id, inst] of _3DInstances) {
-    if (id.startsWith(prefix)) {
-      try { inst.cleanup(); } catch(e) {}
-      _3DInstances.delete(id);
-    }
+  if (mvEl.availableAnimations && mvEl.availableAnimations.length) {
+    trigger();
+  } else {
+    mvEl.addEventListener('load', trigger, { once: true });
   }
 }
 
@@ -2994,7 +2805,10 @@ function choosePortal() {
   sfx.confirm(true);
 
   // Play 3D door-open animation at the moment the CSS thinks the door should open (~2s)
-  setTimeout(() => playPortalDoorOpenAnimation(state.portalFocusIndex), 1900);
+  setTimeout(() => {
+    const mv = document.querySelector(`[data-portal-mv="${state.portalFocusIndex + 1}"]`);
+    playGlbOpenAnimation(mv);
+  }, 1900);
 
   // After the bag jump completes, teleport to Level 1
   setTimeout(() => {
@@ -3353,7 +3167,7 @@ function wireAdvance() {
       const nextId = SCENE_FLOW[idx + 1];
       // Special case: rules door plays its 3D open animation before advancing
       if (state.currentScene === 'scene-rules' && btn.id === 'rules-door-btn') {
-        playRulesDoorOpenAnimation();
+        playGlbOpenAnimation(document.getElementById('rules-door-mv'));
         setTimeout(() => { if (nextId) goToScene(nextId); }, 1100);
       } else {
         if (nextId) goToScene(nextId);

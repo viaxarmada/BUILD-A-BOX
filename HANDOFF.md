@@ -6,10 +6,10 @@
 
 ---
 
-## TL;DR — Recently resolved (2026-04-25 follow-up)
+## TL;DR — Recently resolved (2026-04-25)
 
 - **Single-file artifact concept dropped** — only the GitHub Pages folder build is supported.
-- **Door open animation bug fixed** — `mixer._actions` was undefined; now uses `inst.getActions()`.
+- **3D system migrated to Google's `<model-viewer>`** — replaced ~250 lines of Three.js init/cleanup boilerplate with declarative HTML elements. Eliminates the door-animation bug class, gives proper touch orbit, HDRI lighting, and lazy loading. Vendored `three.min.js` and `GLTFLoader.js` removed.
 - **Mobile portrait** — rotate-to-landscape overlay added; players are prompted to rotate, with a "Continue anyway" escape hatch.
 - **Background music added** — 90-second 8-bit chiptune loop in `assets/bgm.ogg`/`bgm.m4a`. SFX still procedural.
 - **Repo content corrected** — earlier commits had files from the unrelated Streamlit-era project; replaced with the correct self-contained `index.html` + `assets/` + `models/`.

@@ -154,9 +154,7 @@ Add `?noanim` to disable CSS animations (useful for screenshots). `?jump=` impli
 build-a-box/
 ├── index.html           # Entire game — logic, layout, styles, sound, 3D
 ├── README.md            # This file
-├── assets/              # 2D images, audio, and Three.js library
-│   ├── three.min.js     # Vendored Three.js r128 for offline use
-│   ├── GLTFLoader.js    # GLB model loader
+├── assets/              # 2D images and audio
 │   ├── bgm.ogg          # Background music (Ogg Vorbis)
 │   ├── bgm.m4a          # Background music (AAC fallback for Safari)
 │   ├── scene-*.jpg      # Background images
@@ -182,30 +180,22 @@ build-a-box/
 
 ## 3D model rendering
 
-The game uses **Three.js (r128)** with **GLTFLoader** to render `.glb` 3D models with real perspective, lighting, and rotation. Models are loaded from the `/models` folder when their scene becomes active and are cleaned up when the scene exits to free GPU memory.
+The game uses Google's **`<model-viewer>`** web component (loaded once from jsDelivr CDN) to render every `.glb`. It's purpose-built for product viewers: HDRI lighting, touch-friendly orbit/pinch, lazy loading, and animation control are all built in.
 
 **3D models in use:**
-- **Rules scene:** `Final_Door.glb` — the red advance door with built-in left+right open animations that play when clicked
-- **Let's Create scene:** `Bag_of_chip.glb` (rotating Monster Snacks bag) on `Pedestal.glb` (3D turntable)
-- **Portal selection scene:** Three doors mapped to slot colors:
+- **Rules scene:** `Final_Door.glb` — the red advance door with a built-in open animation triggered when clicked
+- **Let's Create scene:** `Bag_of_chip.glb` (auto-rotating Monster Snacks bag) on `Pedestal.glb` (3D turntable)
+- **Portal selection scene:** Three doors, mapped slot → GLB:
   - Slot 1 (yellow visual) → `Door3.glb`
   - Slot 2 (red visual) → `Door1.glb`
   - Slot 3 (green visual) → `Door2.glb`
-  - Each door has 4 baked open animations; one fires when the door is chosen
-- **Level 1 (Factory):** `Pallet_Tray.glb`, `Single_sided_tray.glb`, `Post_Tray.glb` — all rotating
-- **Level 2 (Warehouse):** `Kraft_Roll_of_Paper.glb`, `White_Roll_of_Paper.glb` — both rotating
+  - Each door has baked open animations; the first available clip fires when the door is chosen
+- **Level 1 (Factory):** `Pallet_Tray.glb`, `Single_sided_tray.glb`, `Post_Tray.glb` — all auto-rotating
+- **Level 2 (Warehouse):** `Kraft_Roll_of_Paper.glb`, `White_Roll_of_Paper.glb` — both auto-rotating
 
-**Lighting:** Each 3D scene uses ambient + directional key + directional fill + cyan rim lighting to match the game's neon aesthetic.
+**Animation control:** A small helper `playGlbOpenAnimation(mvEl)` in `index.html` reads `mvEl.availableAnimations`, sets `animationName`, and calls `mvEl.play({ repetitions: 1 })`. Used by the rules door and portal door click handlers.
 
-**Lifecycle management:** A `_3DInstances` Map tracks all active 3D contexts. When a scene exits, `cleanup3DScene(prefix)` disposes geometries, materials, textures, and renderers for that scene's models — preventing GPU memory accumulation.
-
-**Graceful fallback chain:**
-1. Try to load `assets/three.min.js` locally → if missing, load from cdnjs CDN
-2. Try to load `assets/GLTFLoader.js` locally → if missing, load from cdnjs CDN
-3. If WebGL is unavailable in the browser, show 2D PNG fallbacks
-4. If a specific `.glb` fails to load, show that asset's 2D PNG fallback
-
-Players never see a broken state regardless of network conditions or browser capabilities.
+**Fallback:** If a GLB fails to load (network, blocked CDN, etc.) `<model-viewer>`'s `poster` attribute keeps the 2D PNG visible — the game stays playable without 3D.
 
 ---
 
