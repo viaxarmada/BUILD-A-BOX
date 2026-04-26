@@ -1405,6 +1405,22 @@ body {
   --poster-color: transparent;
   background: transparent;
 }
+/* Rules door uses model-viewer */
+.rules-door-3d {
+  width: 100%;
+  height: 100%;
+  display: block;
+  --poster-color: transparent;
+  background: transparent;
+}
+/* Level scene side doors (door1/door2/door3) */
+.portal-door model-viewer {
+  height: 100%;
+  width: 100%;
+  display: block;
+  --poster-color: transparent;
+  background: transparent;
+}
 /* Preview BEHIND the door — hidden at rest */
 .portal-preview {
   position: absolute;
@@ -1901,7 +1917,22 @@ body {
       </div>
       <button class="rules-door-btn advance" id="rules-door-btn" aria-label="Enter next scene">
         <div class="door-frame">
-          <img class="rules-door-img" src="assets/rules-door.png" alt="Red portal door" />
+          <model-viewer
+              id="rules-door-mv"
+              class="rules-door-3d"
+              src="models/Final_Door.glb"
+              alt="Red portal door"
+              camera-controls
+              disable-zoom
+              interaction-prompt="none"
+              shadow-intensity="0.6"
+              exposure="1.05"
+              camera-orbit="0deg 75deg 2m"
+              field-of-view="38deg"
+              autoplay="false"
+              poster="assets/rules-door.png"
+              reveal="auto"
+              loading="eager"></model-viewer>
           <div class="door-light-overlay"></div>
         </div>
         <span class="rules-door-caption">CLICK TO ENTER</span>
@@ -1939,7 +1970,7 @@ body {
         interaction-prompt="none"
         shadow-intensity="0.6"
         exposure="1.1"
-        camera-orbit="0deg 75deg 4.5m"
+        camera-orbit="0deg 75deg 2.25m"
         field-of-view="35deg"
         poster="assets/bag-monster.png"
         reveal="auto"></model-viewer>
@@ -1979,7 +2010,7 @@ body {
           interaction-prompt="none"
           shadow-intensity="0.4"
           exposure="1"
-          camera-orbit="0deg 78deg 4m"
+          camera-orbit="0deg 78deg 2m"
           field-of-view="35deg"
           poster="assets/pedestal.png"></model-viewer>
       <model-viewer
@@ -1992,7 +2023,7 @@ body {
           interaction-prompt="none"
           shadow-intensity="0.6"
           exposure="1.1"
-          camera-orbit="0deg 75deg 4.5m"
+          camera-orbit="0deg 75deg 2.25m"
           field-of-view="35deg"
           poster="assets/bag-monster.png"></model-viewer>
     </div>
@@ -2016,7 +2047,7 @@ body {
               interaction-prompt="none"
               shadow-intensity="0.5"
               exposure="1"
-              camera-orbit="0deg 78deg 3.8m"
+              camera-orbit="0deg 78deg 1.9m"
               field-of-view="38deg"
               autoplay="false"
               poster="assets/door-yellow.png"></model-viewer>
@@ -2039,7 +2070,7 @@ body {
               interaction-prompt="none"
               shadow-intensity="0.5"
               exposure="1"
-              camera-orbit="0deg 78deg 3.8m"
+              camera-orbit="0deg 78deg 1.9m"
               field-of-view="38deg"
               autoplay="false"
               poster="assets/door-red.png"></model-viewer>
@@ -2062,7 +2093,7 @@ body {
               interaction-prompt="none"
               shadow-intensity="0.5"
               exposure="1"
-              camera-orbit="0deg 78deg 3.8m"
+              camera-orbit="0deg 78deg 1.9m"
               field-of-view="38deg"
               autoplay="false"
               poster="assets/door-green.png"></model-viewer>
@@ -2082,8 +2113,20 @@ body {
   <div class="scene level" id="scene-level1" data-level="1">
     <div class="level-bg"><video class="level-bg-video" muted playsinline preload="auto" poster="assets/scene-factory.jpg"><source src="assets/scene-factory.mp4" type="video/mp4"></video></div>
     <div class="brand-label seq-pop" data-delay="2">Shelf<b>Smart</b></div>
-    <div class="portal-door seq-down" data-delay="3" id="door1">
-      <img src="assets/door-yellow.png" alt="" />
+    <div class="portal-door seq-down" data-delay="3" id="door1" tabindex="0" role="button" aria-label="Advance to next portal (door)">
+      <model-viewer
+          src="models/Door3.glb"
+          alt="Yellow advance door"
+          camera-controls
+          disable-zoom
+          interaction-prompt="none"
+          shadow-intensity="0.5"
+          exposure="1"
+          camera-orbit="0deg 78deg 1.9m"
+          field-of-view="38deg"
+          autoplay="false"
+          poster="assets/door-yellow.png"
+          reveal="auto"></model-viewer>
       <div class="light"></div>
     </div>
 
@@ -2125,7 +2168,7 @@ body {
           interaction-prompt="none"
           shadow-intensity="0.5"
           exposure="1.05"
-          camera-orbit="0deg 75deg 4m"
+          camera-orbit="0deg 75deg 2m"
           field-of-view="35deg"
           poster="assets/tray-pallet.png"
           reveal="auto"></model-viewer>
@@ -2141,7 +2184,7 @@ body {
           interaction-prompt="none"
           shadow-intensity="0.5"
           exposure="1.05"
-          camera-orbit="0deg 75deg 4m"
+          camera-orbit="0deg 75deg 2m"
           field-of-view="35deg"
           poster="assets/tray-single.png"
           reveal="auto"></model-viewer>
@@ -2157,7 +2200,7 @@ body {
           interaction-prompt="none"
           shadow-intensity="0.5"
           exposure="1.05"
-          camera-orbit="0deg 75deg 4m"
+          camera-orbit="0deg 75deg 2m"
           field-of-view="35deg"
           poster="assets/tray-corner.png"
           reveal="auto"></model-viewer>
@@ -2176,8 +2219,20 @@ body {
   <div class="scene level" id="scene-level2" data-level="2">
     <div class="level-bg"><video class="level-bg-video" muted playsinline preload="auto" poster="assets/scene-warehouse.jpg"><source src="assets/scene-warehouse.mp4" type="video/mp4"></video></div>
     <div class="brand-label tr seq-pop" data-delay="2">Shelf<b>Smart</b></div>
-    <div class="portal-door seq-down" data-delay="3" id="door2" style="right: auto; left: 3%;">
-      <img src="assets/door-green.png" alt="" />
+    <div class="portal-door seq-down" data-delay="3" id="door2" tabindex="0" role="button" aria-label="Advance to next portal (door)" style="right: auto; left: 3%;">
+      <model-viewer
+          src="models/Door2.glb"
+          alt="Green advance door"
+          camera-controls
+          disable-zoom
+          interaction-prompt="none"
+          shadow-intensity="0.5"
+          exposure="1"
+          camera-orbit="0deg 78deg 1.9m"
+          field-of-view="38deg"
+          autoplay="false"
+          poster="assets/door-green.png"
+          reveal="auto"></model-viewer>
       <div class="light"></div>
     </div>
 
@@ -2210,7 +2265,7 @@ body {
           interaction-prompt="none"
           shadow-intensity="0.5"
           exposure="1.05"
-          camera-orbit="0deg 75deg 4.5m"
+          camera-orbit="0deg 75deg 2.25m"
           field-of-view="35deg"
           poster="assets/paper-kraft.png"
           reveal="auto"></model-viewer>
@@ -2226,7 +2281,7 @@ body {
           interaction-prompt="none"
           shadow-intensity="0.5"
           exposure="1.05"
-          camera-orbit="0deg 75deg 4.5m"
+          camera-orbit="0deg 75deg 2.25m"
           field-of-view="35deg"
           poster="assets/paper-white.png"
           reveal="auto"></model-viewer>
@@ -2240,6 +2295,22 @@ body {
   <div class="scene level" id="scene-level3" data-level="3">
     <div class="level-bg"><video class="level-bg-video" muted playsinline preload="auto" poster="assets/scene-store.jpg"><source src="assets/scene-store.mp4" type="video/mp4"></video></div>
     <div class="brand-label tr seq-pop" data-delay="2" style="background: #E85FCC; color: #fff;">Shelf<b>Smart</b></div>
+    <div class="portal-door seq-down" data-delay="3" id="door3" tabindex="0" role="button" aria-label="Advance to results (door)">
+      <model-viewer
+          src="models/Door1.glb"
+          alt="Red advance door"
+          camera-controls
+          disable-zoom
+          interaction-prompt="none"
+          shadow-intensity="0.5"
+          exposure="1"
+          camera-orbit="0deg 78deg 1.9m"
+          field-of-view="38deg"
+          autoplay="false"
+          poster="assets/door-red.png"
+          reveal="auto"></model-viewer>
+      <div class="light"></div>
+    </div>
 
     <!-- Packaging mockup -->
     <div class="mockup">
@@ -3009,7 +3080,9 @@ function selectCurrentOption() {
   const opt = parseInt(el.dataset.opt, 10);
   const level = parseInt(state.currentScene.replace('scene-level', ''), 10);
 
-  // Light up the door (flashing red "ready to advance" signal)
+  // Light up the door (flashing red "ready to advance" signal). The
+  // door is now the only path forward — clicking it advances to the
+  // next scene. See wireLevelDoors() below.
   const door = document.getElementById('door' + level);
   if (door) door.classList.add('on');
 
@@ -3028,14 +3101,35 @@ function selectCurrentOption() {
     const slot = document.querySelector(`#scene-level3 .commslot[data-comm="${opt}"]`);
     if (slot) slot.classList.add('active');
   }
+}
 
-  // After ~1.8s of the door flashing, teleport to the next scene
+/* Click the lit level door to advance to the next scene. Only works
+   after a choice has been made (`.on` class set by selectCurrentOption). */
+function advanceFromLevelDoor(door) {
+  if (!door || !door.classList.contains('on')) return;
+  const sceneEl = door.closest('.scene');
+  if (!sceneEl) return;
+  const level = parseInt(sceneEl.id.replace('scene-level', ''), 10);
   const nextScene = ({ 1: 'scene-level2', 2: 'scene-level3', 3: 'scene-finale' })[level];
+  if (!nextScene) return;
+  // Find the matching door GLB and play its baked open animation.
+  const mv = door.querySelector('model-viewer');
+  if (mv) playGlbOpenAnimation(mv);
   setTimeout(() => {
     if (state.currentScene === 'scene-level' + level) {
       teleportToScene(nextScene);
     }
-  }, 1900);
+  }, 900);
+}
+
+function wireLevelDoors() {
+  document.querySelectorAll('.scene.level .portal-door').forEach(door => {
+    door.style.cursor = 'pointer';
+    door.onclick = () => advanceFromLevelDoor(door);
+    door.onkeydown = (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); advanceFromLevelDoor(door); }
+    };
+  });
 }
 
 /* ---------- 7. LEVEL CONTENT ---------- */
@@ -3153,14 +3247,10 @@ function wireAdvance() {
       sfx.click();
       const idx = SCENE_FLOW.indexOf(state.currentScene);
       const nextId = SCENE_FLOW[idx + 1];
-      // Rules door: brief CSS pulse via the existing door-light-overlay,
-      // then advance. (The 3D open animation lived on a model-viewer that
-      // wasn't reliably loading; the static door image carries the same
-      // intent without the asset risk.)
+      // Rules door: trigger the 3D open animation, then advance.
       if (state.currentScene === 'scene-rules' && btn.id === 'rules-door-btn') {
-        const frame = btn.querySelector('.door-frame');
-        if (frame) frame.classList.add('opening');
-        setTimeout(() => { if (nextId) goToScene(nextId); }, 600);
+        playGlbOpenAnimation(document.getElementById('rules-door-mv'));
+        setTimeout(() => { if (nextId) goToScene(nextId); }, 1100);
       } else {
         if (nextId) goToScene(nextId);
       }
@@ -3198,6 +3288,9 @@ wireAdvance();
 
 // Hide back button initially (title scene)
 updateBackButton();
+
+// Wire up the lit-door click-to-advance on every level scene.
+wireLevelDoors();
 
 /* ===== Auto-scale stage to fit viewport ===== */
 function scaleStageToFit() {
