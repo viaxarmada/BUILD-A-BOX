@@ -317,7 +317,8 @@ body {
   position: relative;
   min-width: clamp(120px, 14vw, 200px);
   height: clamp(44px, 5vw, 68px);
-  padding: 0 clamp(20px, 3vw, 40px) 0 clamp(14px, 2vw, 26px);
+  /* Right padding trimmed to match the now-smaller arrow tip */
+  padding: 0 clamp(14px, 2vw, 26px) 0 clamp(14px, 2vw, 26px);
   margin-top: clamp(20px, 3vw, 40px);
   background: linear-gradient(180deg, #6AB3F0 0%, #2FA1E8 100%);
   color: #fff;
@@ -327,7 +328,8 @@ body {
   font-weight: 700;
   letter-spacing: 0.12em;
   cursor: pointer;
-  clip-path: polygon(0% 0%, 80% 0%, 100% 50%, 80% 100%, 0% 100%);
+  /* Arrow tip shrunk from 20% of button width to ~8% so it matches the NEXT text */
+  clip-path: polygon(0% 0%, 92% 0%, 100% 50%, 92% 100%, 0% 100%);
   text-transform: uppercase;
   transition: transform 0.15s, filter 0.15s;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
@@ -335,6 +337,8 @@ body {
 .arrow-btn:hover, .arrow-btn:focus-visible { transform: scale(1.04); filter: brightness(1.15); outline: none; }
 .arrow-btn:active { transform: scale(0.98); }
 .arrow-btn.pink { background: linear-gradient(180deg, #E85FCC 0%, #A83EB0 100%); }
+/* In the client-card the parent is a flex column that would stretch the button to full width — keep it content-sized. */
+.client-card .arrow-btn { align-self: flex-start; }
 
 /* ===== Rules scene: door mockup ===== */
 .door-frame {
@@ -354,9 +358,9 @@ body {
   align-items: center;
 }
 .client-bag {
-  width: 56%;
+  width: clamp(400px, 50vw, 600px);
   max-width: 640px;
-  aspect-ratio: 3 / 4;
+  height: clamp(450px, 80vh, 620px);
   margin-left: auto;
   margin-right: 4vw;
   display: block;
@@ -369,111 +373,51 @@ body {
 }
 .client-card {
   position: relative;
-  /* Paper-like background with subtle grain */
-  background:
-    linear-gradient(135deg, rgba(255,255,255,0.4) 0%, transparent 30%),
-    repeating-linear-gradient(
-      0deg,
-      rgba(200, 180, 140, 0.06) 0px,
-      rgba(200, 180, 140, 0.06) 1px,
-      transparent 1px,
-      transparent 3px
-    ),
-    repeating-linear-gradient(
-      90deg,
-      rgba(180, 160, 120, 0.04) 0px,
-      rgba(180, 160, 120, 0.04) 1px,
-      transparent 1px,
-      transparent 4px
-    ),
-    linear-gradient(180deg, #FAF5E8 0%, #F3EBD5 100%);
-  width: 85%;
-  max-width: 420px;
-  padding: 6.5% 7% 5.5%;
-  transform: rotate(2deg);
-  box-shadow:
-    0 14px 30px rgba(0, 0, 0, 0.45),
-    0 4px 10px rgba(0, 0, 0, 0.25),
-    inset 0 0 40px rgba(200, 170, 120, 0.08);
+  /* Paper-with-tape image as the background; the image has its own tilt + tape graphic at top */
+  background: url('assets/paper%20with%20tape.png') no-repeat center top / 100% 100%;
+  width: 100%;
+  max-width: 609px;
+  /* Min-height = 1.3 × the natural width (was ~548px tall, now ~712px = +30%) */
+  min-height: 712px;
+  /* Top padding leaves room for the visible tape strip; sides + bottom keep text 10% from the paper edge */
+  padding: 14% 10% 10%;
+  /* Vertically center the inner content within the taller card */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  transform: rotate(0deg);
+  filter: drop-shadow(0 14px 30px rgba(0, 0, 0, 0.45)) drop-shadow(0 4px 10px rgba(0, 0, 0, 0.25));
   color: var(--ink);
   opacity: 0;
-  border-radius: 2px;
-  /* Subtle curl at top-right corner */
-  clip-path: polygon(
-    0 0.5%, 100% 0, 100% 99.5%, 0.5% 100%
-  );
-}
-/* Soft shadow under the paper (depth) */
-.client-card::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 2px;
-  pointer-events: none;
-  /* Slight edge darkening for realism */
-  box-shadow:
-    inset 0 0 60px rgba(0, 0, 0, 0.05),
-    inset 0 -2px 0 rgba(0, 0, 0, 0.04);
 }
 #scene-client.active .client-card {
   animation: cardDrop 0.8s cubic-bezier(0.17, 0.88, 0.32, 1.28) 0.4s both;
 }
 @keyframes cardDrop {
-  0%   { transform: translateY(-120%) rotate(-8deg); opacity: 0; }
-  70%  { transform: translateY(4%) rotate(3deg); opacity: 1; }
-  100% { transform: translateY(0) rotate(2deg); opacity: 1; }
+  0%   { transform: translateY(-120%) rotate(8deg); opacity: 0; }
+  70%  { transform: translateY(4%) rotate(-2deg); opacity: 1; }
+  100% { transform: translateY(0) rotate(0deg); opacity: 1; }
 }
-.client-card::before {
-  content: '';
-  position: absolute;
-  top: -22px;
-  left: 50%;
-  transform: translateX(-50%) rotate(-4deg);
-  width: 36%;
-  height: 34px;
-  background:
-    linear-gradient(90deg,
-      rgba(215, 195, 140, 0.85) 0%,
-      rgba(230, 210, 160, 0.92) 15%,
-      rgba(220, 200, 150, 0.88) 50%,
-      rgba(230, 210, 160, 0.92) 85%,
-      rgba(215, 195, 140, 0.85) 100%
-    ),
-    repeating-linear-gradient(
-      90deg,
-      transparent 0px,
-      transparent 3px,
-      rgba(170, 150, 100, 0.15) 3px,
-      rgba(170, 150, 100, 0.15) 4px
-    );
-  box-shadow:
-    0 3px 6px rgba(0, 0, 0, 0.2),
-    inset 0 0 12px rgba(150, 125, 75, 0.2);
-  /* Torn/uneven edges */
-  clip-path: polygon(
-    2% 15%, 8% 0%, 18% 12%, 28% 3%, 40% 10%, 55% 2%, 68% 12%, 82% 5%, 92% 15%, 98% 8%,
-    98% 85%, 92% 100%, 82% 88%, 68% 98%, 55% 90%, 40% 97%, 28% 88%, 18% 96%, 8% 85%, 2% 94%
-  );
-}
+/* Tape strip is now part of the background image (paper with tape.png) — no overlay needed. */
 .client-card h3 {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: clamp(21px, 2.7vw, 33px);
+  gap: 12px;
+  font-size: clamp(25.2px, 3.24vw, 39.6px);
   font-weight: 600;
-  margin-bottom: 6px;
+  margin-bottom: 7px;
 }
-.client-card .brand-logo { height: clamp(30px, 4vw, 50px); }
-.client-stars { color: #2A6FD6; font-size: clamp(21px, 2.4vw, 30px); letter-spacing: 4px; margin-bottom: 10px; }
-.client-card p { font-size: clamp(16.5px, 1.95vw, 24px); line-height: 1.5; margin-bottom: 8px; }
+.client-card .brand-logo { height: clamp(36px, 4.8vw, 60px); }
+.client-stars { color: #2A6FD6; font-size: clamp(25.2px, 2.88vw, 36px); letter-spacing: 4px; margin-bottom: 12px; }
+.client-card p { font-size: clamp(19.8px, 2.34vw, 28.8px); line-height: 1.5; margin-bottom: 10px; }
 .client-card .hl { color: #2A6FD6; font-weight: 600; }
-.client-card ul { list-style: none; padding: 0; margin-top: 10px; }
+.client-card ul { list-style: none; padding: 0; margin-top: 12px; }
 .client-card ul li {
-  font-size: clamp(15px, 1.8vw, 22.5px);
+  font-size: clamp(18px, 2.16vw, 27px);
   line-height: 1.4;
-  padding-left: 20px;
+  padding-left: 24px;
   position: relative;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 .client-card ul li::before {
   content: '▢';
@@ -549,7 +493,10 @@ body {
   bottom: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: 80%;
+  /* +50% then -30%: 80% → 120% → 84% */
+  width: 84%;
+  height: auto;
+  display: block;
 }
 .pedestal-stack .pedestal-3d {
   position: absolute;
@@ -576,8 +523,9 @@ body {
   bottom: 20%;
   left: 50%;
   transform: translateX(-50%);
-  width: 55%;
-  height: 55%;
+  /* +75% then -10%: 55% → 96.25% → 86.625% */
+  width: 86.625%;
+  height: 86.625%;
   opacity: 0;
   display: block;
   --poster-color: transparent;
@@ -587,6 +535,77 @@ body {
 @keyframes productFloat {
   0%, 100% { transform: translateX(-50%) translateY(0) rotate(-3deg); }
   50%      { transform: translateX(-50%) translateY(-14px) rotate(3deg); }
+}
+
+/* ===== Teleport effect: bag dematerializes when player hits START ===== */
+.pedestal-stack .product-3d.teleporting {
+  /* Override the seq-* and any auto-rotate so this animation runs cleanly */
+  animation: teleportOut 750ms cubic-bezier(0.55, 0.085, 0.68, 0.53) forwards !important;
+}
+@keyframes teleportOut {
+  0% {
+    transform: translateX(-50%) scale(1);
+    filter: brightness(1) drop-shadow(0 0 0 rgba(122, 232, 255, 0));
+    opacity: 1;
+  }
+  25% {
+    transform: translateX(-50%) scale(1.06);
+    filter: brightness(1.6) drop-shadow(0 0 28px rgba(122, 232, 255, 0.9));
+    opacity: 1;
+  }
+  60% {
+    transform: translateX(-50%) scaleX(0.55) scaleY(1.35);
+    filter: brightness(2.2) saturate(0.4) drop-shadow(0 0 50px rgba(122, 232, 255, 1));
+    opacity: 0.85;
+  }
+  100% {
+    transform: translateX(-50%) scaleX(0.04) scaleY(0.05);
+    filter: brightness(3) saturate(0) drop-shadow(0 0 90px rgba(122, 232, 255, 1));
+    opacity: 0;
+  }
+}
+
+/* Vertical light beam that shoots up from the pedestal during teleport */
+.pedestal-stack .teleport-beam {
+  position: absolute;
+  bottom: 18%;
+  left: 50%;
+  width: 6%;
+  height: 0%;
+  transform: translateX(-50%);
+  background: linear-gradient(
+    to top,
+    rgba(122, 232, 255, 0) 0%,
+    rgba(122, 232, 255, 0.55) 12%,
+    rgba(255, 255, 255, 0.95) 50%,
+    rgba(122, 232, 255, 0.55) 88%,
+    rgba(122, 232, 255, 0) 100%
+  );
+  filter: blur(2px);
+  box-shadow: 0 0 36px 8px rgba(122, 232, 255, 0.7);
+  border-radius: 50% / 6%;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 5;
+}
+.pedestal-stack .teleport-beam.active {
+  animation: teleportBeam 700ms ease-out forwards;
+}
+@keyframes teleportBeam {
+  0%   { height: 0%;  opacity: 0;   width: 6%; }
+  30%  { height: 95%; opacity: 1;   width: 12%; }
+  70%  { height: 95%; opacity: 1;   width: 8%; }
+  100% { height: 95%; opacity: 0;   width: 3%; }
+}
+
+/* Pedestal flash when the teleport fires */
+.pedestal-stack .pedestal.teleport-flash {
+  animation: pedestalFlash 700ms ease-out;
+}
+@keyframes pedestalFlash {
+  0%   { filter: brightness(1); }
+  25%  { filter: brightness(1.5) drop-shadow(0 0 30px rgba(122, 232, 255, 0.9)); }
+  100% { filter: brightness(1); }
 }
 
 /* ===== Level scene shared styles ===== */
@@ -1410,26 +1429,23 @@ body {
   position: relative;
   z-index: 3;
 }
+/* Portal doors are 3D model-viewer GLBs (Door1/2/3). Each GLB has its own internal "Door1" animation
+   that rotates only the colored panel while the gray frame stays put. We trigger it via choosePortal() →
+   playGlbOpenAnimation() — no CSS transform on the element so the GLB's animation can show through. */
 .portal-door-3d {
   width: 100%;
-  aspect-ratio: 1 / 2;
+  height: 50vh;
   display: block;
   position: relative;
   z-index: 3;
   --poster-color: transparent;
   background: transparent;
-  transform: scale(2);
-  transform-origin: center;
 }
-/* Rules door uses model-viewer */
-.rules-door-3d {
+/* Rules door uses a static image (image5) */
+.rules-door-img {
   width: 100%;
-  aspect-ratio: 1 / 2;
+  height: auto;
   display: block;
-  --poster-color: transparent;
-  background: transparent;
-  transform: scale(2);
-  transform-origin: center;
 }
 /* Level scene side doors (door1/door2/door3) */
 .portal-door model-viewer {
@@ -1445,11 +1461,12 @@ body {
    blurred so the door reads as the focal element. Brightens when chosen. */
 .portal-preview {
   position: absolute;
-  /* Size approximately to the door opening (excluding frame) */
-  top: 9%;
-  left: 12%;
-  width: 76%;
-  height: 82%;
+  /* Fit inside the door opening: top starts below the bell housing (~18%),
+     bottom is flush with the visible bottom of the 3D door (no overflow onto floor). */
+  top: 18%;
+  left: 22%;
+  width: 56%;
+  height: calc(70% - 15px);
   overflow: hidden;
   z-index: 1;
   background: #060c1a;
@@ -1463,27 +1480,45 @@ body {
   position: absolute;
   inset: 0;
   background-size: cover;
-  background-position: center;
+  /* Position so the blue monster character (right-mid of the source image) is visible inside the doorway.
+     The 10px subtraction shifts the visible image up so the monster sits a touch higher in the frame. */
+  background-position: 78% calc(65% - 40px);
 }
 .preview-factory { background-image: url('assets/scene-factory.jpg'); }
 .preview-monster {
   position: absolute;
   left: 50%;
-  bottom: 12%;
-  width: 55%;
+  /* Negative bottom drops the bag lower into the doorway threshold area */
+  bottom: -12%;
+  width: 56%;
+  height: 60%;
   transform: translateX(-50%);
   filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.5));
   opacity: 0;
+  z-index: 2;
+  --poster-color: transparent;
+  background: transparent;
+  pointer-events: none;
 }
 
-/* Light on top of every door - use the PNG's built-in light,
-   our overlay only activates when chosen (for color change) */
-.portal-slot .portal-light {
+/* ============================================================
+   GENERIC DOOR BULB INDICATOR — reusable across any scene with a door
+   ============================================================
+   Usage:
+     <div class="door-container">
+       <model-viewer ... class="portal-door-3d"></model-viewer>
+       <div class="door-bulb-light"></div>
+     </div>
+   Then call setDoorBulbLit(containerEl, true) to light it up red
+   (or just toggle the .lit class manually). Position is keyed to the
+   Door1/2/3.glb bulb at 49.5% × 14.5% — aligned per pixel scan.
+   .portal-light is kept as a legacy alias so existing markup still works. */
+.door-bulb-light, .portal-slot .portal-light {
   position: absolute;
-  top: 5.5%;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 10%;
+  top: 14.5%;
+  left: 49.5%;
+  transform: translate(-50%, -50%);
+  width: 11%;
   aspect-ratio: 1;
   border-radius: 50%;
   background: transparent;
@@ -1507,7 +1542,8 @@ body {
 }
 
 /* When chosen: light activates, door opens, preview shows, bag bounces */
-.portal-slot.chosen .portal-light {
+/* Lit state — works for both the new .door-bulb-light.lit and the legacy .portal-slot.chosen .portal-light */
+.door-bulb-light.lit, .portal-slot.chosen .portal-light {
   opacity: 1;
   animation: portalLightPulse 0.45s ease-in-out infinite;
   background: radial-gradient(circle at 30% 30%, #FFA0A0, #FF2020 60%, #660000);
@@ -1521,21 +1557,23 @@ body {
 .portal-slot.chosen .portal-preview {
   opacity: 1;
   filter: brightness(1) saturate(1) blur(0);
-  transition-delay: 1.8s;
+  transition-delay: 0.6s;
 }
 
-/* Door opens: rotateY swings inward around left hinge */
+/* Door opens: rotateY swings inward around left hinge (used only by .portal-door-leaf static-image variant; GLB doors use their own internal open animation) */
 .portal-slot.chosen .portal-door-leaf {
-  animation: doorOpen 1s cubic-bezier(0.5, 0, 0.3, 1) 2s forwards;
+  animation: doorOpen 1s cubic-bezier(0.5, 0, 0.3, 1) 0.4s forwards;
 }
 @keyframes doorOpen {
   0%   { transform: perspective(1000px) rotateY(0deg); }
   100% { transform: perspective(1000px) rotateY(-115deg); }
 }
 
-/* Monster bag preview: jumps and rotates once door opens */
+/* Monster bag preview: appears once door is fully open (~1s after click), then jumps + spins.
+   Door open completes at ~1.2s (400ms trigger + 833ms Action clip). Bag reveal at 1.0s,
+   jump-spin at 1.5s — both finish well before the 4.8s teleport. */
 .portal-slot.chosen .preview-monster {
-  animation: monsterReveal 0.4s ease 2.4s both, monsterJumpSpin 1.6s cubic-bezier(0.4, 0, 0.6, 1) 2.8s both;
+  animation: monsterReveal 0.4s ease 1.0s both, monsterJumpSpin 1.6s cubic-bezier(0.4, 0, 0.6, 1) 1.5s both;
 }
 @keyframes monsterReveal {
   from { opacity: 0; transform: translateX(-50%) translateY(20px); }
@@ -1608,14 +1646,14 @@ body {
 }
 
 /* ============================================================
-   RULES SCENE LAYOUT — centered column
+   RULES SCENE LAYOUT — vertically centered column
    ============================================================ */
 #scene-rules .rules-layout {
-  padding: 13vh 6vw 10vh;
+  padding: 6vh 6vw;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
   gap: 4vh;
   height: 100%;
   width: 100%;
@@ -1624,14 +1662,6 @@ body {
 /* ============================================================
    RULES SCENE — big clickable red door as advance button
    ============================================================ */
-  padding: 13vh 6vw 10vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 3vh;
-  height: 100%;
-}
 #scene-rules .rules-text {
   display: flex;
   flex-direction: column;
@@ -1675,7 +1705,7 @@ body {
 .rules-door-btn:active { transform: translateY(-2px); }
 .rules-door-btn .door-frame {
   position: relative;
-  width: clamp(140px, 16vw, 220px);
+  width: clamp(420px, 48vw, 660px);
   transition: filter 0.2s;
   filter: drop-shadow(0 12px 30px rgba(0, 0, 0, 0.5));
 }
@@ -1712,13 +1742,13 @@ body {
   50%      { opacity: 1; }
 }
 
-/* Red light overlay positioning for the rules door */
+/* Red light overlay positioning for the rules door — sits exactly over the bulb dome in image5.png (centered at 49.3% × 31.3%, dome ~11% wide) */
 #scene-rules .door-light-overlay {
   position: absolute;
-  top: 2%;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 14%;
+  top: 31.3%;
+  left: 49.3%;
+  transform: translate(-50%, -50%);
+  width: 10.5%;
   aspect-ratio: 1;
   border-radius: 50%;
   background: radial-gradient(circle at 30% 30%, #FF7878, #FF1515 60%, #880000);
@@ -1933,26 +1963,12 @@ body {
     <div class="header-pill seq-pill">LOADING <span class="dots">· · · ·</span></div>
     <div class="scene-body rules-layout">
       <div class="rules-text">
-        <p class="line seq-fade" data-delay="3">Travel through 3 portals to choose the features of your packaging design.</p>
+        <p class="line seq-fade" data-delay="3">Travel through 3 portals to choose the<br>features of your packaging design.</p>
         <p class="line seq-fade" data-delay="6">When you make your choice, the door will light up red — click it to advance.</p>
       </div>
       <button class="rules-door-btn advance" id="rules-door-btn" aria-label="Enter next scene">
         <div class="door-frame">
-          <model-viewer
-              id="rules-door-mv"
-              class="rules-door-3d"
-              src="models/Final_Door.glb"
-              alt="Red portal door"
-              camera-controls
-              disable-zoom
-              interaction-prompt="none"
-              shadow-intensity="0.6"
-              exposure="1.05"
-              camera-orbit="0deg 75deg 3.5m"
-              field-of-view="38deg"
-              poster="assets/rules-door.png"
-              reveal="auto"
-              loading="eager"></model-viewer>
+          <img src="assets/image5.png" alt="Red portal door" class="rules-door-img" />
           <div class="door-light-overlay"></div>
         </div>
         <span class="rules-door-caption">CLICK TO ENTER</span>
@@ -2020,32 +2036,24 @@ body {
       <button class="start-btn advance seq-pop" data-delay="10" id="btn-lets-start" aria-label="Start designing">START</button>
     </div>
     <div class="pedestal-stack">
-      <div class="halo"></div>
+      <img class="pedestal" src="assets/pedestal.png" alt="Pedestal" />
       <model-viewer
-          class="pedestal-3d"
-          src="models/Pedestal.glb"
-          alt="Pedestal turntable"
-          camera-controls
-          disable-zoom
-          interaction-prompt="none"
-          shadow-intensity="0.4"
-          exposure="1"
-          camera-orbit="0deg 78deg 2m"
-          field-of-view="35deg"
-          poster="assets/pedestal.png"></model-viewer>
-      <model-viewer
-          class="product-3d"
+          class="product-3d advance"
+          id="bag-advance"
           src="models/Bag_of_chip.glb"
-          alt="Monster Snacks bag"
+          alt="Click to start"
           auto-rotate
           rotation-per-second="40deg"
-          camera-controls
+          disable-zoom
+          disable-pan
+          disable-tap
           interaction-prompt="none"
           shadow-intensity="0.6"
           exposure="1.1"
           camera-orbit="0deg 75deg 2.25m"
           field-of-view="35deg"
-          poster="assets/bag-monster.png"></model-viewer>
+          poster="assets/bag-monster.png"
+          style="cursor: pointer;"></model-viewer>
     </div>
     <img class="ignite-mark" src="assets/logo-ignite.png" alt="" />
     <div class="kb-hint"><kbd>Enter</kbd> Start designing &nbsp; · &nbsp; <kbd>Backspace</kbd> Back</div>
@@ -2055,68 +2063,71 @@ body {
   <div class="scene scene-portals" id="scene-portals">
     <div class="portals-caption">CHOOSE YOUR PORTAL TO BEGIN</div>
     <div class="portals-row">
-      <button class="portal-slot" data-portal="1" data-glb="Door3.glb" aria-label="Enter portal 1">
+      <button class="portal-slot" data-portal="1" data-glb="Door3.glb" aria-label="Enter portal 1 (yellow door)">
         <div class="portal-door-container">
           <model-viewer
               class="portal-door-3d portal-door-mv"
               data-portal-mv="1"
               src="models/Door3.glb"
               alt="Yellow portal door"
-              camera-controls
               disable-zoom
+              disable-pan
+              disable-tap
               interaction-prompt="none"
               shadow-intensity="0.5"
               exposure="1"
-              camera-orbit="0deg 78deg 3m"
+              camera-orbit="0deg 78deg 5m"
               field-of-view="38deg"
-              poster="assets/door-yellow.png"></model-viewer>
+              poster="assets/image13.png"></model-viewer>
           <div class="portal-preview" aria-hidden="true">
             <div class="preview-scene preview-factory"></div>
-            <img class="preview-monster preview-monster-blue" src="assets/bag-monster.png" alt="" />
+            <model-viewer class="preview-monster preview-monster-blue" src="models/Bag_of_chip.glb" alt="" interaction-prompt="none" disable-zoom disable-pan disable-tap shadow-intensity="0.4" exposure="1.1" camera-orbit="0deg 75deg 2.6m" field-of-view="35deg"></model-viewer>
           </div>
           <div class="portal-light"></div>
         </div>
       </button>
-      <button class="portal-slot" data-portal="2" data-glb="Door1.glb" aria-label="Enter portal 2">
+      <button class="portal-slot" data-portal="2" data-glb="Door1.glb" aria-label="Enter portal 2 (red door)">
         <div class="portal-door-container">
           <model-viewer
               class="portal-door-3d portal-door-mv"
               data-portal-mv="2"
               src="models/Door1.glb"
               alt="Red portal door"
-              camera-controls
               disable-zoom
+              disable-pan
+              disable-tap
               interaction-prompt="none"
               shadow-intensity="0.5"
               exposure="1"
-              camera-orbit="0deg 78deg 3m"
+              camera-orbit="0deg 78deg 5m"
               field-of-view="38deg"
-              poster="assets/door-red.png"></model-viewer>
+              poster="assets/image14.png"></model-viewer>
           <div class="portal-preview" aria-hidden="true">
             <div class="preview-scene preview-factory"></div>
-            <img class="preview-monster preview-monster-blue" src="assets/bag-monster.png" alt="" />
+            <model-viewer class="preview-monster preview-monster-blue" src="models/Bag_of_chip.glb" alt="" interaction-prompt="none" disable-zoom disable-pan disable-tap shadow-intensity="0.4" exposure="1.1" camera-orbit="0deg 75deg 2.6m" field-of-view="35deg"></model-viewer>
           </div>
           <div class="portal-light"></div>
         </div>
       </button>
-      <button class="portal-slot" data-portal="3" data-glb="Door2.glb" aria-label="Enter portal 3">
+      <button class="portal-slot" data-portal="3" data-glb="Door2.glb" aria-label="Enter portal 3 (green door)">
         <div class="portal-door-container">
           <model-viewer
               class="portal-door-3d portal-door-mv"
               data-portal-mv="3"
               src="models/Door2.glb"
               alt="Green portal door"
-              camera-controls
               disable-zoom
+              disable-pan
+              disable-tap
               interaction-prompt="none"
               shadow-intensity="0.5"
               exposure="1"
-              camera-orbit="0deg 78deg 3m"
+              camera-orbit="0deg 78deg 5m"
               field-of-view="38deg"
-              poster="assets/door-green.png"></model-viewer>
+              poster="assets/image12.png"></model-viewer>
           <div class="portal-preview" aria-hidden="true">
             <div class="preview-scene preview-factory"></div>
-            <img class="preview-monster preview-monster-blue" src="assets/bag-monster.png" alt="" />
+            <model-viewer class="preview-monster preview-monster-blue" src="models/Bag_of_chip.glb" alt="" interaction-prompt="none" disable-zoom disable-pan disable-tap shadow-intensity="0.4" exposure="1.1" camera-orbit="0deg 75deg 2.6m" field-of-view="35deg"></model-viewer>
           </div>
           <div class="portal-light"></div>
         </div>
@@ -2139,7 +2150,7 @@ body {
           interaction-prompt="none"
           shadow-intensity="0.5"
           exposure="1"
-          camera-orbit="0deg 78deg 3m"
+          camera-orbit="0deg 78deg 4.5m"
           field-of-view="38deg"
           poster="assets/door-yellow.png"
           reveal="auto"></model-viewer>
@@ -2244,7 +2255,7 @@ body {
           interaction-prompt="none"
           shadow-intensity="0.5"
           exposure="1"
-          camera-orbit="0deg 78deg 3m"
+          camera-orbit="0deg 78deg 4.5m"
           field-of-view="38deg"
           poster="assets/door-green.png"
           reveal="auto"></model-viewer>
@@ -2319,7 +2330,7 @@ body {
           interaction-prompt="none"
           shadow-intensity="0.5"
           exposure="1"
-          camera-orbit="0deg 78deg 3m"
+          camera-orbit="0deg 78deg 4.5m"
           field-of-view="38deg"
           poster="assets/door-red.png"
           reveal="auto"></model-viewer>
@@ -2653,6 +2664,9 @@ function goToScene(id) {
 
   sfx.whoosh();
 
+  // If leaving the portal scene, reset doors to closed pose so a return visit shows them shut.
+  if (state.currentScene === 'scene-portals' && id !== 'scene-portals') resetPortalDoors();
+
   current.classList.add('fading-out');
   setTimeout(() => {
     current.classList.remove('active', 'fading-out');
@@ -2684,8 +2698,8 @@ function restartSceneAnimations(sceneEl) {
 function updateBackButton() {
   const btn = document.getElementById('btn-back');
   if (!btn) return;
-  // Back button shown on all scenes except title, portals (auto-transition), finale
-  const hidden = ['scene-title', 'scene-portals', 'scene-finale'];
+  // Back button shown on all scenes except title and finale
+  const hidden = ['scene-title', 'scene-finale'];
   btn.style.display = hidden.includes(state.currentScene) ? 'none' : 'flex';
 }
 
@@ -2808,17 +2822,79 @@ function runTypewriter() {
    bit of JS we own is triggering the door-open animation on the chosen
    door — model-viewer exposes the same animation clips via its
    `availableAnimations` getter and a `play()` method. */
+/* ============================================================
+   REUSABLE DOOR HELPERS — drop-in for any scene with a Door1/2/3.glb model
+   ============================================================
+   - setDoorBulbLit(container, lit): turn the red bell light on/off.
+     `container` is any element containing a `.door-bulb-light` (or legacy `.portal-light`).
+   - playGlbOpenAnimation(modelViewer): open the door (Action clip, ends at frame 1.04).
+   - resetDoorAnimation(modelViewer): snap the door back to its closed pose.
+   These work on any door scene as long as it follows the same DOM convention. */
+function setDoorBulbLit(container, lit) {
+  if (!container) return;
+  const bulb = container.querySelector('.door-bulb-light, .portal-light');
+  if (!bulb) return;
+  bulb.classList.toggle('lit', !!lit);
+}
+
+function resetDoorAnimation(mvEl) {
+  if (!mvEl) return;
+  try {
+    mvEl.pause();
+    mvEl.currentTime = 0;
+    requestAnimationFrame(() => { mvEl.currentTime = 0; });
+    setTimeout(() => { mvEl.currentTime = 0; }, 100);
+  } catch (e) { /* ignore */ }
+}
+
+/* Reset every portal door back to its closed pose (used when leaving scene-portals
+   so that if the user navigates back, doors are closed again — not stuck open).
+   Mirrors playGlbOpenAnimation's pattern: pause, set currentTime, re-apply on next
+   tick + after a delay because model-viewer's internal mixer otherwise overrides
+   the reset. */
+function resetPortalDoors() {
+  const sceneEl = document.getElementById('scene-portals');
+  if (!sceneEl) return;
+  sceneEl.classList.remove('has-chosen');
+  sceneEl.querySelectorAll('.portal-slot').forEach(s => s.classList.remove('chosen', 'focused'));
+  sceneEl.querySelectorAll('.portal-door-3d').forEach(mv => {
+    try {
+      mv.pause();
+      mv.currentTime = 0;
+      requestAnimationFrame(() => { mv.currentTime = 0; });
+      setTimeout(() => { mv.currentTime = 0; }, 100);
+    } catch (e) { /* ignore */ }
+  });
+}
+
 function playGlbOpenAnimation(mvEl) {
   if (!mvEl) return;
-  // model-viewer parses GLB animations asynchronously. If clips aren't
-  // ready yet, wait one load tick and retry.
+  // The portal-door GLBs (Door1/2/3.glb) ship with 4 clips: "Action" is the smooth
+  // panel-swing animation (21 LINEAR-interpolated rotation keyframes, real keyframe
+  // range ~0.21–1.04s). The "Door1/2/3" clips are 2-keyframe STEP clips — no smooth
+  // motion. We always want "Action" if present; only fall back if it's missing.
+  // model-viewer's play({repetitions:1}) resets to currentTime=0 when the clip ends,
+  // so we drive the playhead manually via rAF and clamp at the end-frame to keep
+  // the door visibly open.
   const trigger = () => {
     const clips = mvEl.availableAnimations || [];
     if (!clips.length) return;
-    // Pick the first non-default clip ('Action', 'Open', etc. — anything
-    // other than the implicit empty default works).
-    mvEl.animationName = clips[0];
-    try { mvEl.play({ repetitions: 1 }); } catch (e) { /* ignore */ }
+    const preferred = clips.find(n => n === 'Action')
+                   || clips.find(n => /open|door/i.test(n))
+                   || clips[0];
+    mvEl.animationName = preferred;
+    // play → pause → set currentTime → re-apply on next tick.
+    // play() binds the clip, pause() stops auto-playback, then setting currentTime
+    // poses the rig directly. Re-applying via rAF + setTimeout overrides anything
+    // model-viewer's internal tick resets on the next frame, so the open pose holds.
+    const END = 1.04;  // end of "Action"'s keyframe range
+    try {
+      mvEl.play({ repetitions: 1 });
+      mvEl.pause();
+      mvEl.currentTime = END;
+      requestAnimationFrame(() => { mvEl.currentTime = END; });
+      setTimeout(() => { mvEl.currentTime = END; }, 100);
+    } catch (e) { /* ignore */ }
   };
   if (mvEl.availableAnimations && mvEl.availableAnimations.length) {
     trigger();
@@ -2877,11 +2953,11 @@ function choosePortal() {
   sceneEl.classList.add('has-chosen');
   sfx.confirm(true);
 
-  // Play 3D door-open animation at the moment the CSS thinks the door should open (~2s)
+  // Trigger the GLB's internal "Door1" open animation on the chosen door. Only the colored panel rotates; the gray frame stays put.
   setTimeout(() => {
     const mv = document.querySelector(`[data-portal-mv="${state.portalFocusIndex + 1}"]`);
-    playGlbOpenAnimation(mv);
-  }, 1900);
+    if (mv) playGlbOpenAnimation(mv);
+  }, 400);
 
   // After the bag jump completes, teleport to Level 1
   setTimeout(() => {
@@ -2895,6 +2971,8 @@ function choosePortal() {
 function teleportToScene(targetId) {
   const stage = document.getElementById('stage');
   sfx.whoosh();
+  // If leaving the portal scene, reset doors to closed pose so a return visit shows them shut.
+  if (state.currentScene === 'scene-portals' && targetId !== 'scene-portals') resetPortalDoors();
   stage.classList.add('teleporting');
   setTimeout(() => {
     // Swap scene while stage is near-invisible
@@ -3261,10 +3339,27 @@ function wireAdvance() {
       sfx.click();
       const idx = SCENE_FLOW.indexOf(state.currentScene);
       const nextId = SCENE_FLOW[idx + 1];
-      // Rules door: trigger the 3D open animation, then advance.
+      // Rules door: play the door-frame "punch" animation, then advance.
       if (state.currentScene === 'scene-rules' && btn.id === 'rules-door-btn') {
-        playGlbOpenAnimation(document.getElementById('rules-door-mv'));
-        setTimeout(() => { if (nextId) goToScene(nextId); }, 1100);
+        const frame = btn.querySelector('.door-frame');
+        if (frame) frame.classList.add('opening');
+        setTimeout(() => { if (nextId) goToScene(nextId); }, 600);
+      } else if (state.currentScene === 'scene-create' && (btn.id === 'btn-lets-start' || btn.id === 'bag-advance')) {
+        // Teleport effect: light beam shoots up, bag dematerializes, then advance.
+        const stack = document.querySelector('#scene-create .pedestal-stack');
+        const product = stack?.querySelector('.product-3d');
+        const pedestal = stack?.querySelector('.pedestal');
+        if (stack && !stack.querySelector('.teleport-beam')) {
+          const beam = document.createElement('div');
+          beam.className = 'teleport-beam';
+          stack.appendChild(beam);
+          // Force reflow so the animation actually plays when we add `active`.
+          void beam.offsetWidth;
+          beam.classList.add('active');
+        }
+        if (pedestal) pedestal.classList.add('teleport-flash');
+        if (product) product.classList.add('teleporting');
+        setTimeout(() => { if (nextId) goToScene(nextId); }, 800);
       } else {
         if (nextId) goToScene(nextId);
       }
