@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
 <title>BUILD-A-BOX · Smurfit Westrock</title>
 <link rel="preload" as="image" href="assets/scene-factory.jpg" />
+<!-- Preload destinations shown behind level-completion doors so the image
+     is in the cache before the door's open animation starts (no flash). -->
+<link rel="preload" as="image" href="assets/scene-warehouse.jpg" />
+<link rel="preload" as="image" href="assets/scene-store.jpg" />
+<link rel="preload" as="image" href="assets/scene-costco.jpg" />
 <!--
   Google's <model-viewer> handles all GLB rendering. It's a single web
   component: declarative `<model-viewer src="..." auto-rotate camera-controls>`
@@ -646,21 +651,28 @@ body {
   top: 0;
   right: 2%;
   height: 55%;
+  aspect-ratio: 1 / 2;
   z-index: 5;
   transform: translateY(-5%);
   filter: drop-shadow(0 10px 25px rgba(0, 0, 0, 0.5));
 }
 .portal-door img { height: 100%; width: auto; display: block; }
+/* Bulb indicator is positioned to overlay the door GLB's painted red bulb.
+   The GLB bulb sits at (49.5%, ~10.5%) of the model-viewer canvas; the
+   model-viewer renders at scale(2) centered on this wrapper, so on screen
+   the bulb appears around y=-29% of the wrapper. Width is doubled
+   (11% → 22%) to match the visible 2x scale. */
 .portal-door .light {
   position: absolute;
-  top: 7%;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 11%;
+  top: -29%;
+  left: 49%;
+  transform: translate(-50%, -50%);
+  width: 22%;
   aspect-ratio: 1;
   border-radius: 50%;
   background: #4a0000;
   transition: all 0.4s ease;
+  pointer-events: none;
 }
 .portal-door.on .light {
   background: radial-gradient(circle at 30% 30%, #FF7878, #FF1515 60%, #880000);
@@ -716,11 +728,14 @@ body {
   outline: none;
 }
 .option-card.blue { background: #86DFFF; }
-.option-card.picked { animation: cardFlash 0.6s ease; }
+.option-card.picked { animation: cardFlash 0.6s ease forwards; }
+/* Opacity is included in every keyframe + fill-mode is `forwards` — without
+   that, replacing the seq-down animation here would drop the previous
+   `both`-fill opacity:1 and the picked card could end up at opacity 0. */
 @keyframes cardFlash {
-  0%   { box-shadow: 0 0 0 0 #FFF; }
-  50%  { box-shadow: 0 0 0 10px rgba(255, 255, 255, 0.6); background: #FFFBE0; }
-  100% { box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35); }
+  0%   { opacity: 1; box-shadow: 0 0 0 0 #FFF; }
+  50%  { opacity: 1; box-shadow: 0 0 0 10px rgba(255, 255, 255, 0.6); background: #FFFBE0; }
+  100% { opacity: 1; box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35); }
 }
 .option-card h4 {
   color: #1A6FD3;
@@ -745,7 +760,7 @@ body {
 }
 .option-card ul { list-style: none; padding-left: 0; }
 .option-card ul li {
-  padding-left: 12px;
+  padding-left: 32px;
   position: relative;
   margin-bottom: 3px;
 }
@@ -758,12 +773,14 @@ body {
   top: 2px;
 }
 
-/* Level 1 — three trays */
+/* Level 1 — three trays sitting on the cad-table surface */
 .tray-slot {
   position: absolute;
-  bottom: 18%;
-  width: 22%;
-  z-index: 4;
+  bottom: 30%;
+  width: 18%;
+  /* Above .option-card (z-index 8) so the 3D tray models render in front
+     of the description tooltips when they overlap. */
+  z-index: 9;
   cursor: pointer;
   transition: transform 0.25s;
   opacity: 0;
@@ -775,50 +792,224 @@ body {
   aspect-ratio: 1 / 1;
   --poster-color: transparent;
   background: transparent;
-  /* Visual-only 2x: doubles the rendered model without resizing the
-     positioned slot (which would overlap adjacent trays). */
-  transform: scale(2);
+  /* Visual-only 1.7x: enlarges the rendered model on its positioned slot. */
+  transform: scale(1.7);
   transform-origin: center bottom;
 }
 .tray-slot:hover, .tray-slot.focused { transform: translateY(-8px) scale(1.04); }
-.tray-slot[data-opt="1"] { left: 10%; }
-.tray-slot[data-opt="2"] { left: 38%; }
-.tray-slot[data-opt="3"] { left: 66%; }
+.tray-slot[data-opt="1"] { left: 4%;  bottom: calc(32% + 50px); --pick-dx: 592px; --pick-dy: 32px; }
+.tray-slot[data-opt="2"] { left: 24%; bottom: calc(26% + 50px); --pick-dx: 228px; --pick-dy: -22px; }
+.tray-slot[data-opt="3"] { left: 42%; bottom: calc(30% + 70px); --pick-dx: -168px; --pick-dy: 34px; }
+/* New fly-in: each tray fades in at the centre-top of the stage, hovers
+   there briefly while rotating slowly (1/8 speed via the model-viewer's
+   rotation-per-second attribute), then swoops down in an arc to its final
+   resting position. Sequencing is one-at-a-time via per-opt delays. The
+   per-tray translate distances are baked into the keyframes since each
+   tray's centre-top offset depends on its own positioned location. */
 #scene-level1.active .tray-slot {
-  animation: trayDrop 0.9s cubic-bezier(0.17, 0.88, 0.32, 1.28) both;
+  animation-duration: 4s;
+  animation-timing-function: cubic-bezier(0.45, 0.05, 0.4, 1.0);
+  animation-fill-mode: both;
 }
-#scene-level1.active .tray-slot[data-opt="1"] { animation-delay: 1.3s; }
-#scene-level1.active .tray-slot[data-opt="2"] { animation-delay: 1.6s; }
-#scene-level1.active .tray-slot[data-opt="3"] { animation-delay: 1.9s; }
-@keyframes trayDrop {
-  0%   { transform: translateY(-180%) scale(0.7); opacity: 0; }
-  70%  { transform: translateY(10%) scale(1); opacity: 1; }
-  100% { transform: translateY(0) scale(1); opacity: 1; }
+#scene-level1.active .tray-slot[data-opt="1"] { animation-name: traySwoop1; animation-delay: 1.0s; }
+#scene-level1.active .tray-slot[data-opt="2"] { animation-name: traySwoop2; animation-delay: 5.0s; }
+#scene-level1.active .tray-slot[data-opt="3"] { animation-name: traySwoop3; animation-delay: 9.0s; }
+@keyframes traySwoop1 {
+  /* fade in at centre-top */
+  0%   { transform: translate(592px, -328px) scale(0.9); opacity: 0; }
+  8%   { transform: translate(592px, -328px) scale(1);   opacity: 1; }
+  /* hover there with slow rotation while user describes the tray */
+  35%  { transform: translate(592px, -328px) scale(1);   opacity: 1; }
+  /* arc apex — lifted slightly above the linear path */
+  72%  { transform: translate(320px, -200px) scale(1.04); opacity: 1; }
+  /* land + settle at final position */
+  100% { transform: translate(0, 0) scale(1);            opacity: 1; }
 }
-.tray-num {
+@keyframes traySwoop2 {
+  0%   { transform: translate(228px, -382px) scale(0.9); opacity: 0; }
+  8%   { transform: translate(228px, -382px) scale(1);   opacity: 1; }
+  35%  { transform: translate(228px, -382px) scale(1);   opacity: 1; }
+  72%  { transform: translate(140px, -240px) scale(1.04); opacity: 1; }
+  100% { transform: translate(0, 0) scale(1);            opacity: 1; }
+}
+@keyframes traySwoop3 {
+  0%   { transform: translate(-168px, -326px) scale(0.9); opacity: 0; }
+  8%   { transform: translate(-168px, -326px) scale(1);   opacity: 1; }
+  35%  { transform: translate(-168px, -326px) scale(1);   opacity: 1; }
+  72%  { transform: translate(-90px,  -200px) scale(1.04); opacity: 1; }
+  100% { transform: translate(0, 0) scale(1);             opacity: 1; }
+}
+
+/* When a tray is selected: chosen one jumps up while rotating quickly,
+   then settles slightly raised. The other trays fade away ONLY after the
+   jump finishes (animation-delay = jump duration). */
+@keyframes traySelectJump {
+  0%   { opacity: 1; transform: translate(0, 0)     scale(1); }
+  35%  { opacity: 1; transform: translate(0, -90px) scale(1.18); }
+  70%  { opacity: 1; transform: translate(0, -30px) scale(1.10); }
+  100% { opacity: 1; transform: translate(0, -55px) scale(1.10); }
+}
+@keyframes trayFadeOut {
+  0%   { opacity: 1; transform: translate(0, 0) scale(1);   filter: blur(0) saturate(1); }
+  100% { opacity: 0; transform: translate(0, 0) scale(0.9); filter: blur(3px) saturate(0.4); }
+}
+/* The per-data-opt fly-in rules (`#scene-level1.active .tray-slot[data-opt="N"]`)
+   have specificity (1,3,0) — higher than a plain `.tray-picked` selector — so we
+   need [data-opt] + `.active` here to win the cascade and replace the swoop
+   animation when the user clicks a tray. */
+#scene-level1.active .tray-slot[data-opt].tray-picked {
+  animation: traySelectJump 0.9s cubic-bezier(0.4, 0, 0.6, 1) forwards;
+  z-index: 11;
+  filter: drop-shadow(0 14px 26px rgba(0, 0, 0, 0.55));
+}
+#scene-level1.active .tray-slot[data-opt].tray-faded {
+  /* Wait for the picked tray's jump animation (0.9s) before fading the
+     unpicked trays — keeps the visual order: jump+spin first, then the
+     rest fade out. `both` fill-mode is critical: it holds the 0% keyframe
+     (opacity 1) during the delay so the trays stay visible while the
+     picked one jumps; without it the previous animation's `both` fill is
+     replaced and the .tray-slot's base CSS opacity:0 takes over instantly. */
+  animation: trayFadeOut 0.6s ease 0.9s both;
+  pointer-events: none;
+}
+
+/* Universal "fade out unpicked option" — applied across scene-level1/2/3
+   on selection. Reuses the trayFadeOut keyframes; the 0.9s delay matches
+   the picked option's highlight animation so unpicked items don't dim
+   until the focal animation completes.
+   Note the level-3 commslot selector includes `.mockup` to bump its
+   specificity above the staggered pop-in rule (which is `.mockup
+   .commslot` and would otherwise override). */
+#scene-level1.active .option-card.option-faded,
+#scene-level2.active .option-card.option-faded,
+#scene-level3.active .level3-options .option-card.option-faded,
+#scene-level2.active .roll-slot.option-faded,
+#scene-level3.active .mockup .commslot.option-faded {
+  animation: trayFadeOut 0.6s ease 0.9s both;
+  pointer-events: none;
+}
+
+/* Level-completion door preview — destination peek behind the open door.
+   Mirrors the scene-portals .portal-preview pattern but sized to the
+   smaller .portal-door wrapper used on scene-level1/2/3. Hidden by
+   default; the .opening class added on door click reveals it. */
+.portal-door .portal-preview {
   position: absolute;
-  bottom: 6%;
-  width: 2.3em;
-  height: 2.3em;
-  border-radius: 50%;
-  background: #F9A825;
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 800;
-  font-size: clamp(27px, 3.75vw, 48px);
-  box-shadow: 0 4px 10px rgba(0,0,0,0.35);
-  z-index: 5;
+  /* Sized to fully cover the door opening on the scaled (2x) GLB render.
+     Height bumped 30% (110% → 143%) so the destination extends far enough
+     above and below the doorway that no edge-of-image shows through the
+     opening. The crop frame is dropped 30px (top -36% + 30px) per the
+     latest layout request. z-index:0 + DOM-order-before-the-door-GLB
+     keeps the preview strictly behind the door. */
+  top: calc(-36% + 40px);
+  left: -22%;
+  width: 144%;
+  height: 143%;
+  z-index: 0;
+  overflow: hidden;
+  background: #060c1a;
+  border-radius: 2px;
+  box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.85);
+  opacity: 0;
+  filter: brightness(0.4) saturate(0.8) blur(2px);
+  transition: opacity 0.5s, filter 0.5s;
+  pointer-events: none;
 }
-.tray-num[data-num="1"] { left: 16%; }
-.tray-num[data-num="2"] { left: 45%; }
-.tray-num[data-num="3"] { left: 72%; }
+.portal-door .portal-preview .preview-scene {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  /* Shifts the background image alone down 10px without moving the bag
+     model — .preview-scene is a sibling of .preview-monster, so
+     translating it doesn't drag the bag with it. */
+  transform: translateY(10px);
+  /* object-fit/object-position on the <img> mirror what background-size /
+     background-position did on the old div: shift right to reveal the
+     pink warehouse monster while keeping the crop window unchanged. */
+  object-fit: cover;
+  object-position: 78% 45%;
+}
+.portal-door .preview-warehouse  { background-image: url('assets/scene-warehouse.jpg'); }
+.portal-door .preview-store      { background-image: url('assets/scene-store.jpg'); }
+.portal-door .preview-costco     { background-image: url('assets/scene-costco.jpg'); }
+.portal-door.opening .portal-preview {
+  opacity: 1;
+  filter: brightness(1) saturate(1) blur(0);
+  transition-delay: 0.5s;
+}
+.portal-door.opening .preview-monster {
+  /* Reuses the scene-portals monsterReveal + monsterJumpSpin keyframes. */
+  animation: monsterReveal 0.4s ease 0.9s both,
+             monsterJumpSpin 1.6s cubic-bezier(0.4, 0, 0.6, 1) 1.4s both;
+}
+/* Scope-only override: bag inside the level door is 30% smaller than the
+   scene-portals bag (39.2% × 42% vs the global 56% × 60% defaults). */
+.portal-door .preview-monster {
+  width: 39.2%;
+  height: 42%;
+}
+
+/* ShelfSmart pill in scene-level1 doubles as the descriptions toggle.
+   By default the option-card descriptions are hidden — clicking the pill
+   toggles `.show-descriptions` on the scene to fade them in. */
+#scene-level1 .option-card {
+  display: none;
+  /* 50% larger than the default option-card sizing — bumps font-size and
+     padding while keeping em-based child sizing (h4, num, bullets) in
+     proportion. Cards become taller as the text wraps more. */
+  font-size: clamp(20.25px, 2.475vw, 31.5px);
+  padding: clamp(12px, 1.8vw, 21px) clamp(15px, 2.25vw, 27px);
+}
+#scene-level1.show-descriptions .option-card { display: block; }
+#scene-level1 .brand-label {
+  cursor: pointer;
+  user-select: none;
+  /* 2x larger than the default brand-label, scoped to scene-level1 only. */
+  font-size: clamp(42px, 6vw, 78px);
+  padding: 20px 52px;
+  bottom: calc(3% + 100px);
+}
+#scene-level1 .brand-label:hover { transform: translateY(-2px); }
+#scene-level1.show-descriptions .brand-label {
+  background: #FFE680;
+  box-shadow: 0 0 0 3px var(--cyan), 0 6px 14px rgba(0, 0, 0, 0.35);
+}
+
+/* Level 2 description cards bumped 30% larger (font + padding) so they
+   visually match the bigger tray-selection cards on level 1. */
+#scene-level2 .option-card {
+  font-size: clamp(17.55px, 2.145vw, 27.3px);
+  padding: clamp(10px, 1.56vw, 18px) clamp(13px, 1.95vw, 23px);
+}
+
+/* Level 2 ShelfSmart pill: 2x larger (font + padding), positioned 70px
+   below its `top: 8%` anchor (was 100px, raised 30px). Scoped so the
+   level-1 / level-3 pills keep their own sizing. Also doubles as the
+   description-toggle button (cursor + click handler in JS). */
+#scene-level2 .brand-label.tr {
+  top: calc(8% + 30px);
+  font-size: clamp(42px, 6vw, 78px);
+  padding: 20px 52px;
+  cursor: pointer;
+  user-select: none;
+}
+#scene-level2 .brand-label.tr:hover { transform: translateY(-2px); }
+#scene-level2.show-descriptions .brand-label.tr {
+  background: #B6F4FF;
+  box-shadow: 0 0 0 3px var(--cyan), 0 6px 14px rgba(0, 0, 0, 0.35);
+}
+/* Description cards hidden by default; ShelfSmart toggle reveals them. */
+#scene-level2 .option-card { display: none; }
+#scene-level2.show-descriptions .option-card { display: block; }
 
 /* Level 2 — paper rolls */
 .roll-slot {
   position: absolute;
-  bottom: 15%;
+  /* Anchored high on the stage and shifted another 200px up so the 3D
+     rolls line up with the painted warehouse-roll stacks in the bg. */
+  bottom: calc(50% + 220px);
   width: 20%;
   z-index: 4;
   cursor: pointer;
@@ -829,10 +1020,14 @@ body {
 .roll-slot canvas,
 .roll-slot model-viewer { width: 100%; display: block; filter: drop-shadow(0 20px 25px rgba(0,0,0,0.35)); }
 .roll-slot model-viewer {
-  aspect-ratio: 1 / 1.3;
+  /* Another +20% taller (1.56 → 1.872) per latest layout pass — width
+     unchanged, the model-viewer's box just gets more vertical room. */
+  aspect-ratio: 1 / 1.872;
   --poster-color: transparent;
   background: transparent;
-  transform: scale(2);
+  /* +50% from the previous 1× — rolls now render slightly larger
+     while still reading as part of the bg's roll stack. */
+  transform: scale(1.5);
   transform-origin: center bottom;
 }
 .roll-slot:hover, .roll-slot.focused { transform: translateY(-8px) scale(1.04); }
@@ -846,6 +1041,39 @@ body {
 @keyframes rollRise {
   0%   { transform: translateY(100%) scale(0.8); opacity: 0; }
   100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+/* Two-stage interaction:
+   1) First click on a roll → adds .roll-down → roll drops 300px and
+      scales to 50% so the user can inspect it from the warehouse floor.
+      Both rolls can be in this state simultaneously.
+   2) Second click on a down-roll → adds .roll-picked → the roll keeps
+      its down position but gets a cyan ring; the universal .option-faded
+      block then dims the other roll + descriptions and the door light
+      activates. */
+@keyframes rollDropToFloor {
+  0%   { opacity: 1; transform: translate(0, 0)     scale(1, 1); }
+  /* End pose: 200px lower (300 → 500) and a non-uniform scale that
+     keeps the previous +300% height (scaleY 2) but trims the width by
+     50% (scaleX 1) so the rolls read as taller, slimmer cylinders. */
+  100% { opacity: 1; transform: translate(0, 500px) scale(1, 2); }
+}
+#scene-level2.active .roll-slot[data-opt].roll-down {
+  animation: rollDropToFloor 0.9s cubic-bezier(0.4, 0, 0.6, 1) forwards;
+  z-index: 11;
+  filter: drop-shadow(0 18px 28px rgba(0, 0, 0, 0.6));
+}
+/* Selection highlight while the roll stays in its down position. */
+#scene-level2.active .roll-slot[data-opt].roll-down.roll-picked {
+  outline: 4px solid var(--cyan);
+  outline-offset: 8px;
+  border-radius: 12px;
+}
+/* This rule must declare its animation AFTER `.roll-down` above so that
+   when both classes coexist on a fading sibling, the fade wins the
+   cascade tie and runs to completion. */
+#scene-level2.active .roll-slot[data-opt].option-faded {
+  animation: trayFadeOut 0.6s ease 0.9s both;
+  pointer-events: none;
 }
 
 /* Level 3 — product mockup with communication options */
@@ -868,11 +1096,13 @@ body {
   opacity: 0;
 }
 #scene-level3.active .mockup {
-  animation: mockupSlide 0.9s cubic-bezier(0.17, 0.88, 0.32, 1.28) 0.5s both;
+  /* Fade-in only (was slide-from-left). The white panel appears first,
+     then each design image pops in sequentially via per-slot delays. */
+  animation: mockupFade 0.7s ease 0.5s both;
 }
-@keyframes mockupSlide {
-  0%   { transform: translateX(-120%) rotate(-5deg); opacity: 0; }
-  100% { transform: translateX(0) rotate(0); opacity: 1; }
+@keyframes mockupFade {
+  0%   { opacity: 0; }
+  100% { opacity: 1; }
 }
 .mockup .commslot {
   width: 70%;
@@ -880,20 +1110,177 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 0.15;
-  transition: all 0.4s ease;
+  opacity: 0; /* hidden until the staggered pop-in plays */
+  transition: filter 0.4s ease;
   position: relative;
+}
+/* Pop-in: each commslot fades + scales up, staggered after the white
+   panel finishes fading in (panel ends at 1.2s; first slot starts 1.4s,
+   then 0.6s gaps so they appear one at a time). */
+#scene-level3.active .mockup .commslot {
+  animation: commPopIn 0.5s cubic-bezier(0.17, 0.88, 0.32, 1.28) both;
+}
+#scene-level3.active .mockup .commslot:nth-child(1) { animation-delay: 1.4s; }
+#scene-level3.active .mockup .commslot:nth-child(2) { animation-delay: 2.0s; }
+#scene-level3.active .mockup .commslot:nth-child(3) { animation-delay: 2.6s; }
+@keyframes commPopIn {
+  0%   { opacity: 0; transform: scale(0.5); }
+  60%  { opacity: 1; transform: scale(1.15); }
+  100% { opacity: 1; transform: scale(1); }
 }
 .mockup .commslot.active {
   opacity: 1;
-  transform: scale(1.1);
+  transform: scale(1.5);
   animation: commPop 0.5s cubic-bezier(0.17, 0.88, 0.32, 1.28);
+  z-index: 6;
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.45));
 }
 @keyframes commPop {
-  0%   { transform: scale(0.5); }
-  60%  { transform: scale(1.2); }
-  100% { transform: scale(1.1); }
+  0%   { transform: scale(1);   }
+  60%  { transform: scale(1.6); }
+  100% { transform: scale(1.5); }
 }
+
+/* Level 3 — hide the red door per latest pass; the new Final_Door reveal
+   below replaces it as the post-selection visual. */
+#scene-level3 #door3 { display: none; }
+
+/* Level 3 — Final_Door reveal: hidden by default. Once the player picks
+   a design, the scene gets `.final-revealed` and the wrapper rises from
+   below the stage to ~10% from top of stage. The GLB sits in front of
+   a costco backdrop; the elevator-style open animation is triggered
+   afterwards by JS playing the GLB's bundled clip. */
+#scene-level3 .final-door-reveal {
+  position: absolute;
+  left: 50%;
+  bottom: -130%;
+  /* Logical 95% × 93.75%, then a 1.69× scale anchored at the bottom-
+     centre — that's the previous 1.3× × another 30%. The door grows
+     out of the stage edges; transform-origin keeps it planted on the
+     floor. */
+  width: 95%;
+  height: 93.75%;
+  transform: translateX(-50%) scale(1.69);
+  transform-origin: center bottom;
+  z-index: 12;
+  pointer-events: none;
+  opacity: 0;
+}
+#scene-level3.final-revealed .final-door-reveal {
+  animation: finalDoorRise 2.5s cubic-bezier(0.25, 0.6, 0.35, 1) forwards;
+}
+@keyframes finalDoorRise {
+  0%   { bottom: -130%;  opacity: 0; }
+  10%  { opacity: 1; }
+  /* Final pose lowered 300px from the previous bottom: 0% — keeps the
+     door planted lower on the stage so the bulb sits closer to mid-stage. */
+  100% { bottom: -300px; opacity: 1; }
+}
+
+/* Blackout overlay that masks everything behind the door once it reaches
+   final position. z-index sits just below the .final-door-reveal (12) so
+   the door + costco bg in its inset stay visible. */
+#scene-level3 .final-blackout {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  z-index: 11;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.8s ease;
+}
+#scene-level3.final-door-lit .final-blackout {
+  opacity: 1;
+}
+
+/* When `.bg-blackout` is on the scene (added at design pick), fade the
+   warehouse/store backdrop down to black over 4s so the level-3 stage
+   is dark by the time the Final_Door rises. */
+#scene-level3 .level-bg {
+  transition: filter 0.4s ease;
+}
+#scene-level3.bg-blackout .level-bg {
+  animation: bgFadeBlack 4s ease forwards;
+}
+@keyframes bgFadeBlack {
+  0%   { filter: brightness(1); }
+  100% { filter: brightness(0); }
+}
+#scene-level3 .final-door-reveal .final-door-bg {
+  position: absolute;
+  /* Inset so the costco backdrop only fills the door's inner opening.
+     With the door panels closed, the model-viewer's solid frame covers
+     the bg entirely; once the panels split apart elevator-style the
+     bg becomes visible through the gap. */
+  inset: 18% 28%;
+  background: url('assets/scene-costco.jpg') center/cover;
+  z-index: 1;
+  border-radius: 4px;
+}
+#scene-level3 .final-door-reveal model-viewer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 5;
+  --poster-color: transparent;
+  background: transparent;
+}
+/* Bulb overlay aligned with the GLB's painted Sphere bulb (verified via
+   Three.Vector3.project — bulb sits at ~24% from wrapper top in the
+   1.69×-scaled coordinate space). Width tuned to roughly match the
+   bulb's projected screen size. */
+#scene-level3 .final-door-reveal .final-door-bulb {
+  position: absolute;
+  top: 24%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 5%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: #4a0000;
+  z-index: 10;
+  transition: all 0.4s ease;
+}
+#scene-level3.final-door-lit .final-door-bulb {
+  background: radial-gradient(circle at 30% 30%, #FF7878, #FF1515 60%, #880000);
+  box-shadow:
+    0 0 20px #FF2B2B,
+    0 0 50px rgba(255, 43, 43, 0.8),
+    0 0 100px rgba(255, 43, 43, 0.4);
+  animation: lightFlash 0.45s ease-in-out infinite;
+}
+
+/* Level 3 description cards: 1.5× the default font (the previous 3× size
+   was scaled down 50% per the latest layout pass — still visibly larger
+   than the base cards, with extra letter-spacing + line-height for
+   legibility). */
+#scene-level3 .option-card {
+  font-size: clamp(20.25px, 2.475vw, 31.5px);
+  padding: clamp(9px, 1.35vw, 16px) clamp(11px, 1.65vw, 20px);
+  letter-spacing: 0.02em;
+  line-height: 1.4;
+}
+#scene-level3 .option-card ul li { margin-bottom: 6px; }
+
+/* Level 3 ShelfSmart pill: was +150% (×2.5), then trimmed 20% per the
+   latest layout pass → effectively ×2 the default brand-label sizing.
+   Also wired as the descriptions toggle button (mirrors level 1/2). */
+#scene-level3 .brand-label.tr {
+  font-size: clamp(42px, 6vw, 78px);
+  padding: 20px 52px;
+  cursor: pointer;
+  user-select: none;
+}
+#scene-level3 .brand-label.tr:hover { transform: translateY(-2px); }
+#scene-level3.show-descriptions .brand-label.tr {
+  box-shadow: 0 0 0 3px var(--cyan), 0 6px 14px rgba(0, 0, 0, 0.35);
+}
+/* Description cards hidden by default on level 3; ShelfSmart toggle reveals
+   them. The .level3-options selector here matches the existing one in the
+   stylesheet — overriding the .option-card opacity:0 with display:none. */
+#scene-level3 .level3-options .option-card { display: none; }
+#scene-level3.show-descriptions .level3-options .option-card { display: block; }
 .mockup .commslot img { width: 100%; }
 .mockup .commslot .num {
   position: absolute;
@@ -921,7 +1308,8 @@ body {
   z-index: 5;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  /* Bigger vertical gap between description cards per latest layout pass. */
+  gap: 30px;
 }
 .level3-options .option-card {
   position: relative;
@@ -2140,13 +2528,34 @@ body {
   <!-- ======== LEVEL 1: Factory — choose tray ======== -->
   <div class="scene level" id="scene-level1" data-level="1">
     <div class="level-bg"><video class="level-bg-video" muted playsinline preload="auto" poster="assets/scene-factory.jpg"><source src="assets/scene-factory.mp4" type="video/mp4"></video></div>
-    <div class="brand-label seq-pop" data-delay="2">Shelf<b>Smart</b></div>
-    <div class="portal-door seq-down" data-delay="3" id="door1" tabindex="0" role="button" aria-label="Advance to next portal (door)">
+    <div class="brand-label seq-pop" data-delay="2" id="lvl1-shelfsmart-toggle" tabindex="0" role="button" aria-pressed="false" aria-label="Show or hide tray descriptions">Shelf<b>Smart</b></div>
+    <div class="portal-door seq-down" data-delay="3" id="door1" tabindex="0" role="button" aria-label="Advance to next portal (door)" style="top: calc(4% + 150px); right: 4%; height: 32.2%;">
+      <!-- Destination peek FIRST in DOM so it stacks behind the door GLB. The
+           bg is a real <img loading="eager"> sibling of the door's <model-viewer>
+           so the browser fetches it as part of the same initial DOM parse —
+           ready by the time the door GLB has finished loading. -->
+      <div class="portal-preview level-door-preview">
+        <img class="preview-scene preview-warehouse" src="assets/scene-warehouse.jpg" alt="" loading="eager" decoding="async" />
+        <model-viewer
+            class="preview-monster"
+            src="models/Bag_of_chip.glb"
+            alt=""
+            interaction-prompt="none"
+            disable-zoom
+            disable-pan
+            disable-tap
+            shadow-intensity="0.4"
+            exposure="1.1"
+            camera-orbit="0deg 75deg 2.6m"
+            field-of-view="35deg"></model-viewer>
+      </div>
       <model-viewer
+          class="level-door-mv"
           src="models/Door3.glb"
           alt="Yellow advance door"
-          camera-controls
           disable-zoom
+          disable-pan
+          disable-tap
           interaction-prompt="none"
           shadow-intensity="0.5"
           exposure="1"
@@ -2157,8 +2566,9 @@ body {
       <div class="light"></div>
     </div>
 
-    <!-- Option tooltips above each tray -->
-    <div class="option-card seq-down" data-delay="5" style="top: 18%; left: 4%;" data-opt="1">
+    <!-- Option tooltips above each tray. Positions tightened + shifted
+         left so card 3 clears the yellow door on the right side. -->
+    <div class="option-card seq-down" data-delay="5" style="top: calc(18% - 50px); left: 2%;" data-opt="1">
       <h4><span class="num">1</span>PALLET TRAY</h4>
       <ul>
         <li>Increased product visibility</li>
@@ -2166,7 +2576,7 @@ body {
         <li>Requires additional inserts</li>
       </ul>
     </div>
-    <div class="option-card seq-down" data-delay="6" style="top: 18%; left: 36%;" data-opt="2">
+    <div class="option-card seq-down" data-delay="6" style="top: calc(18% - 50px); left: calc(28% - 20px);" data-opt="2">
       <h4><span class="num">2</span>SINGLE-SIDED TRAY</h4>
       <ul>
         <li>Limited product visibility</li>
@@ -2174,7 +2584,7 @@ body {
         <li>No inserts required</li>
       </ul>
     </div>
-    <div class="option-card seq-down" data-delay="7" style="top: 18%; left: 68%;" data-opt="3">
+    <div class="option-card seq-down" data-delay="7" style="top: calc(18% - 50px); left: calc(54% - 40px); max-width: 29%;" data-opt="3">
       <h4><span class="num">3</span>CORNER POST TRAY</h4>
       <ul>
         <li>Good product visibility</li>
@@ -2183,14 +2593,15 @@ body {
       </ul>
     </div>
 
-    <!-- Trays — model-viewer with poster fallback -->
+    <!-- Trays — model-viewer with poster fallback. Auto-rotate is OFF by
+         default; JS toggles it on at scene enter then off when the
+         tray-drop fly-in animation ends, so trays only spin while moving. -->
     <div class="tray-slot" data-opt="1" tabindex="0" role="button" aria-label="Pallet tray">
       <model-viewer
           class="tray-3d"
           src="models/Pallet_Tray.glb"
           alt="Pallet tray"
-          auto-rotate
-          rotation-per-second="30deg"
+          rotation-per-second="7.5deg"
           camera-controls
           interaction-prompt="none"
           shadow-intensity="0.5"
@@ -2205,8 +2616,7 @@ body {
           class="tray-3d"
           src="models/Single_sided_tray.glb"
           alt="Single-sided tray"
-          auto-rotate
-          rotation-per-second="30deg"
+          rotation-per-second="7.5deg"
           camera-controls
           interaction-prompt="none"
           shadow-intensity="0.5"
@@ -2221,8 +2631,7 @@ body {
           class="tray-3d"
           src="models/Post_Tray.glb"
           alt="Corner post tray"
-          auto-rotate
-          rotation-per-second="30deg"
+          rotation-per-second="7.5deg"
           camera-controls
           interaction-prompt="none"
           shadow-intensity="0.5"
@@ -2233,25 +2642,42 @@ body {
           reveal="auto"></model-viewer>
     </div>
 
-    <!-- Numbered badges -->
-    <div class="tray-num seq-pop" data-delay="9" data-num="1" style="bottom: 8%;">1</div>
-    <div class="tray-num seq-pop" data-delay="10" data-num="2" style="bottom: 8%;">2</div>
-    <div class="tray-num seq-pop" data-delay="11" data-num="3" style="bottom: 8%;">3</div>
-
     <img class="ignite-mark" src="assets/logo-ignite.png" alt="" />
     <div class="kb-hint"><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> Pick tray &nbsp; · &nbsp; <kbd>←</kbd><kbd>→</kbd> Browse · <kbd>Enter</kbd> Select &nbsp; · &nbsp; <kbd>Backspace</kbd> Back</div>
   </div>
 
   <!-- ======== LEVEL 2: Warehouse — choose paper ======== -->
   <div class="scene level" id="scene-level2" data-level="2">
-    <div class="level-bg"><video class="level-bg-video" muted playsinline preload="auto" poster="assets/scene-warehouse.jpg"><source src="assets/scene-warehouse.mp4" type="video/mp4"></video></div>
-    <div class="brand-label tr seq-pop" data-delay="2">Shelf<b>Smart</b></div>
-    <div class="portal-door seq-down" data-delay="3" id="door2" tabindex="0" role="button" aria-label="Advance to next portal (door)" style="right: auto; left: 3%;">
+    <!-- Static warehouse bg (no video). The .level-bg rule already paints
+         scene-warehouse.jpg via background-image; nothing else needed. -->
+    <div class="level-bg"></div>
+    <div class="brand-label tr seq-pop" data-delay="2" id="lvl2-shelfsmart-toggle" tabindex="0" role="button" aria-pressed="false" aria-label="Show or hide paper descriptions">Shelf<b>Smart</b></div>
+    <div class="portal-door seq-down" data-delay="3" id="door2" tabindex="0" role="button" aria-label="Advance to next portal (door)" style="right: auto; left: 3%; top: auto; bottom: calc(8% + 150px); height: 35.75%; transform: none;">
+      <!-- Destination peek FIRST in DOM so it stacks behind the door GLB.
+           Mirrors the level-1 setup: scene-store image as the eager-loaded
+           backdrop + the Bag_of_chip GLB for the bag jump-spin. -->
+      <div class="portal-preview level-door-preview">
+        <img class="preview-scene preview-store" src="assets/scene-store.jpg" alt="" loading="eager" decoding="async" />
+        <model-viewer
+            class="preview-monster"
+            src="models/Bag_of_chip.glb"
+            alt=""
+            interaction-prompt="none"
+            disable-zoom
+            disable-pan
+            disable-tap
+            shadow-intensity="0.4"
+            exposure="1.1"
+            camera-orbit="0deg 75deg 2.6m"
+            field-of-view="35deg"></model-viewer>
+      </div>
       <model-viewer
+          class="level-door-mv"
           src="models/Door2.glb"
           alt="Green advance door"
-          camera-controls
           disable-zoom
+          disable-pan
+          disable-tap
           interaction-prompt="none"
           shadow-intensity="0.5"
           exposure="1"
@@ -2262,7 +2688,7 @@ body {
       <div class="light"></div>
     </div>
 
-    <div class="option-card blue seq-down" data-delay="5" style="top: 16%; left: 18%; max-width: 28%;" data-opt="1">
+    <div class="option-card blue seq-down" data-delay="5" style="top: 16%; left: 24%; max-width: 28%;" data-opt="1">
       <h4 style="color: #0066CC"><span class="num" style="background:#0066CC; color:#fff;">1</span>KRAFT PAPER</h4>
       <ul>
         <li>Most cost-effective option</li>
@@ -2270,7 +2696,7 @@ body {
         <li>When printed, some colors can become dull / low-contrast</li>
       </ul>
     </div>
-    <div class="option-card blue seq-down" data-delay="6" style="top: 16%; right: 6%; max-width: 28%;" data-opt="2">
+    <div class="option-card blue seq-down" data-delay="6" style="top: 16%; right: calc(12% + 130px); max-width: 28%;" data-opt="2">
       <h4 style="color: #0066CC"><span class="num" style="background:#0066CC; color:#fff;">2</span>WHITE PAPER</h4>
       <ul>
         <li>Usually requires more investment</li>
@@ -2279,16 +2705,19 @@ body {
       </ul>
     </div>
 
-    <!-- Paper rolls — model-viewer with poster fallback -->
+    <!-- Paper rolls — model-viewer with poster fallback. Auto-rotate is
+         OFF (per latest layout pass) so the rolls sit still once their
+         GLB finishes loading. -->
     <div class="roll-slot" data-opt="1" tabindex="0" role="button" aria-label="Kraft paper">
       <model-viewer
           class="roll-3d"
           src="models/Kraft_Roll_of_Paper.glb"
           alt="Kraft paper roll"
-          auto-rotate
-          rotation-per-second="40deg"
           camera-controls
           interaction-prompt="none"
+          disable-zoom
+          disable-pan
+          disable-tap
           shadow-intensity="0.5"
           exposure="1.05"
           camera-orbit="0deg 75deg 2.25m"
@@ -2301,10 +2730,11 @@ body {
           class="roll-3d"
           src="models/White_Roll_of_Paper.glb"
           alt="White paper roll"
-          auto-rotate
-          rotation-per-second="40deg"
           camera-controls
           interaction-prompt="none"
+          disable-zoom
+          disable-pan
+          disable-tap
           shadow-intensity="0.5"
           exposure="1.05"
           camera-orbit="0deg 75deg 2.25m"
@@ -2320,7 +2750,7 @@ body {
   <!-- ======== LEVEL 3: Store — choose communication focus ======== -->
   <div class="scene level" id="scene-level3" data-level="3">
     <div class="level-bg"><video class="level-bg-video" muted playsinline preload="auto" poster="assets/scene-store.jpg"><source src="assets/scene-store.mp4" type="video/mp4"></video></div>
-    <div class="brand-label tr seq-pop" data-delay="2" style="background: #E85FCC; color: #fff;">Shelf<b>Smart</b></div>
+    <div class="brand-label tr seq-pop" data-delay="2" id="lvl3-shelfsmart-toggle" tabindex="0" role="button" aria-pressed="false" aria-label="Show or hide design descriptions" style="background: #E85FCC; color: #fff;">Shelf<b>Smart</b></div>
     <div class="portal-door seq-down" data-delay="3" id="door3" tabindex="0" role="button" aria-label="Advance to results (door)">
       <model-viewer
           src="models/Door1.glb"
@@ -2339,9 +2769,9 @@ body {
 
     <!-- Packaging mockup -->
     <div class="mockup">
-      <div class="commslot" data-comm="1"><img src="assets/logo-monster.png" alt="" /><div class="num">1</div></div>
-      <div class="commslot" data-comm="2"><img src="assets/badge-queso.png" alt="" /><div class="num">2</div></div>
-      <div class="commslot" data-comm="3"><img src="assets/badge-delicious.png" alt="" /><div class="num">3</div></div>
+      <div class="commslot" data-comm="1"><img src="assets/logo-monster.png" alt="Monster Snacks" /></div>
+      <div class="commslot" data-comm="2"><img src="assets/image32.png" alt="Queso" /></div>
+      <div class="commslot" data-comm="3"><img src="assets/image31.png" alt="Monstrously Delicious" /></div>
     </div>
 
     <!-- Options list -->
@@ -2369,6 +2799,30 @@ body {
       </div>
     </div>
 
+    <!-- Black mask that fades in once the door reaches final position,
+         covering the cad-shop bg + commslots + descriptions + ShelfSmart
+         pill so the only thing visible is the Final_Door + costco peek. -->
+    <div class="final-blackout" aria-hidden="true"></div>
+    <!-- Final-door reveal: hidden until a design is picked, then rises
+         from below the stage with the costco scene visible behind it.
+         The GLB's open animation splits the panel(s) elevator-style. -->
+    <div class="final-door-reveal" aria-hidden="true">
+      <div class="final-door-bg"></div>
+      <model-viewer
+          class="final-door-mv"
+          src="models/Final_Door.glb"
+          alt="Final door"
+          disable-zoom
+          disable-pan
+          disable-tap
+          interaction-prompt="none"
+          shadow-intensity="0.5"
+          exposure="1"
+          camera-orbit="0deg 78deg 5m"
+          field-of-view="38deg"
+          reveal="auto"></model-viewer>
+      <div class="final-door-bulb"></div>
+    </div>
     <img class="ignite-mark" src="assets/logo-ignite.png" alt="" />
     <div class="kb-hint"><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> Pick focus &nbsp; · &nbsp; <kbd>←</kbd><kbd>→</kbd> Browse · <kbd>Enter</kbd> Select &nbsp; · &nbsp; <kbd>Backspace</kbd> Back</div>
   </div>
@@ -2666,6 +3120,16 @@ function goToScene(id) {
 
   // If leaving the portal scene, reset doors to closed pose so a return visit shows them shut.
   if (state.currentScene === 'scene-portals' && id !== 'scene-portals') resetPortalDoors();
+  // If leaving a level scene, snap that level's door GLB back to its
+  // closed pose so coming back doesn't show a still-open door.
+  if (state.currentScene && state.currentScene.startsWith('scene-level')) {
+    const leavingDoor = document.querySelector(`#${state.currentScene} .portal-door`);
+    if (leavingDoor) {
+      leavingDoor.classList.remove('opening', 'on');
+      const lmv = leavingDoor.querySelector('model-viewer.level-door-mv');
+      if (lmv) resetDoorAnimation(lmv);
+    }
+  }
 
   current.classList.add('fading-out');
   setTimeout(() => {
@@ -2703,21 +3167,29 @@ function updateBackButton() {
   btn.style.display = hidden.includes(state.currentScene) ? 'none' : 'flex';
 }
 
-/* Go back one scene in the flow (replays that scene's animations) */
+/* Go back one scene in the flow (replays that scene's animations).
+   Special case for level scenes: jump straight back to scene-portals
+   ("Choose your portal") rather than the previous flow step, so the
+   player can re-pick which level door to enter. */
 function goBack() {
   const idx = SCENE_FLOW.indexOf(state.currentScene);
   if (idx <= 0) return;
-  // Skip the portal scene when going back from level 1 — jump directly to create
-  let prevIdx = idx - 1;
-  if (SCENE_FLOW[prevIdx] === 'scene-portals') prevIdx--;
-  const prevId = SCENE_FLOW[prevIdx];
-  if (!prevId) return;
-  // When going back from a level, also reset that level's choice.
-  // Score is derived from state.choices, so deleting the key refunds automatically.
+  // Level scenes: go back one level (level2→level1, level3→level2), and
+  // level1 jumps all the way back to the portal-picker. Each step also
+  // refunds that level's stored choice so the score stays consistent.
   if (state.currentScene.startsWith('scene-level')) {
     const lvl = parseInt(state.currentScene.replace('scene-level', ''), 10);
     delete state.choices[lvl];
+    sfx.click();
+    if (lvl === 1) { goToScene('scene-portals'); return; }
+    goToScene('scene-level' + (lvl - 1));
+    return;
   }
+  let prevIdx = idx - 1;
+  // Outside level scenes, also skip portals (they're entered via scene-create).
+  if (SCENE_FLOW[prevIdx] === 'scene-portals') prevIdx--;
+  const prevId = SCENE_FLOW[prevIdx];
+  if (!prevId) return;
   sfx.click();
   goToScene(prevId);
 }
@@ -2732,26 +3204,34 @@ function playLevelBackgroundVideo(sceneId) {
   document.querySelectorAll('.level-bg-video').forEach(v => {
     if (v !== video) { try { v.pause(); v.currentTime = 0; } catch(e) {} }
   });
-  // (Re)attach the end handler — wait 2s, then replay if scene still active
+  // Clear any prior loop interval / end-handler / pending replay
+  if (video._loopInterval) { clearInterval(video._loopInterval); video._loopInterval = null; }
+  if (video._pendingReplay) { clearTimeout(video._pendingReplay); video._pendingReplay = null; }
   if (video._replayHandler) {
     video.removeEventListener('ended', video._replayHandler);
+    video._replayHandler = null;
   }
-  video._replayHandler = () => {
-    if (video._pendingReplay) clearTimeout(video._pendingReplay);
-    video._pendingReplay = setTimeout(() => {
-      if (scene.classList.contains('active')) {
-        try { video.currentTime = 0; video.play().catch(() => {}); } catch(e) {}
-      }
-    }, 2000);
-  };
-  video.addEventListener('ended', video._replayHandler);
+  // Fixed 10s loop cycle: every 10s, restart from t=0 if the scene is
+  // still active. This is independent of the clip's natural length —
+  // short clips simply pause on their last frame in the gap, long
+  // clips are cut short and restarted on the 10s mark.
+  video._loopInterval = setInterval(() => {
+    if (!scene.classList.contains('active')) {
+      clearInterval(video._loopInterval);
+      video._loopInterval = null;
+      return;
+    }
+    try { video.currentTime = 0; video.play().catch(() => {}); } catch(e) {}
+  }, 10000);
   // Kick off the first play (autoplay needs muted; element already is)
   try { video.currentTime = 0; video.play().catch(() => {}); } catch(e) {}
 }
 
 function pauseAllLevelBackgroundVideos() {
   document.querySelectorAll('.level-bg-video').forEach(v => {
+    if (v._loopInterval) { clearInterval(v._loopInterval); v._loopInterval = null; }
     if (v._pendingReplay) { clearTimeout(v._pendingReplay); v._pendingReplay = null; }
+    if (v._replayHandler) { v.removeEventListener('ended', v._replayHandler); v._replayHandler = null; }
     try { v.pause(); v.currentTime = 0; } catch(e) {}
   });
 }
@@ -2767,8 +3247,56 @@ function onSceneEnter(id) {
   if (id === 'scene-level1' || id === 'scene-level2' || id === 'scene-level3') {
     playLevelBackgroundVideo(id);
     document.querySelectorAll('.portal-door').forEach(d => d.classList.remove('on'));
+    // Universal reset: clear `.option-faded` and `.picked` from every
+    // level scene so a returning player sees the full set of options
+    // (the `.picked` class otherwise leaves option-cards stuck with
+    // cardFlash's no-fill animation and an effectively-blank state).
+    document.querySelectorAll(`#${id} .option-faded`).forEach(el => el.classList.remove('option-faded'));
+    document.querySelectorAll(`#${id} .option-card.picked`).forEach(el => el.classList.remove('picked'));
+    if (id === 'scene-level1') {
+      // Reset descriptions to hidden each time the scene opens, then wire
+      // the toggle and the spin-only-during-flyin behavior.
+      const lvl1 = document.getElementById('scene-level1');
+      if (lvl1) lvl1.classList.remove('show-descriptions');
+      // Clear any prior pick/fade/door-open state so a returning player
+      // sees a fresh tray fly-in and an unlit, unopened door.
+      lvl1.querySelectorAll('.tray-slot').forEach(s => s.classList.remove('tray-picked', 'tray-faded'));
+      const door = document.getElementById('door1');
+      if (door) {
+        door.classList.remove('opening');
+        const mv = door.querySelector('model-viewer.level-door-mv');
+        if (mv) resetDoorAnimation(mv);
+      }
+      wireShelfSmartToggle();
+      wireTrayFlyInRotation();
+    }
+    if (id === 'scene-level2') {
+      // Reset description visibility, then wire the level-2 ShelfSmart pill
+      // as a show/hide toggle for the paper-option cards (mirrors level 1).
+      const lvl2 = document.getElementById('scene-level2');
+      if (lvl2) lvl2.classList.remove('show-descriptions');
+      // Also strip prior roll-picked + restore default camera-orbit so a
+      // returning player sees the full pair of un-tilted rolls again.
+      lvl2.querySelectorAll('.roll-slot').forEach(s => {
+        s.classList.remove('roll-picked', 'roll-down');
+        const mv = s.querySelector('model-viewer');
+        if (mv) {
+          mv.autoRotate = false;
+          mv.removeAttribute('auto-rotate');
+          mv.setAttribute('camera-orbit', '0deg 75deg 2.25m');
+        }
+      });
+      wireShelfSmartToggle('scene-level2', 'lvl2-shelfsmart-toggle');
+    }
     if (id === 'scene-level3') {
       document.querySelectorAll('#scene-level3 .commslot').forEach(c => c.classList.remove('active'));
+      // Reset description visibility, then wire the level-3 ShelfSmart pill
+      // as a show/hide toggle for the design-option cards (mirrors levels 1/2).
+      const lvl3 = document.getElementById('scene-level3');
+      if (lvl3) lvl3.classList.remove('show-descriptions', 'final-revealed', 'final-door-lit', 'bg-blackout');
+      const finalMv = document.querySelector('#scene-level3 .final-door-mv');
+      if (finalMv) resetDoorAnimation(finalMv);
+      wireShelfSmartToggle('scene-level3', 'lvl3-shelfsmart-toggle');
     }
     wireLevelHover(id);
   }
@@ -2867,6 +3395,73 @@ function resetPortalDoors() {
   });
 }
 
+/* Drive ALL animation clips on a GLB simultaneously via the model-viewer's
+   internal three.js mixer. Required for Final_Door.glb which has two
+   separate clips ("Armature DERAction" + "Armature IZQAction") for the
+   left + right elevator panels — model-viewer's stock `animationName`
+   API plays only one at a time, so without this only one panel opens. */
+function playAllGlbAnimations(mvEl) {
+  if (!mvEl) return;
+  const trigger = () => {
+    let scene = null;
+    for (const s of Object.getOwnPropertySymbols(mvEl)) {
+      const v = mvEl[s];
+      if (v && v.mixer && Array.isArray(v.animations || v.clips || null)) { scene = v; break; }
+    }
+    const clips = scene && (scene.animations || scene.clips || []);
+    if (!scene || !scene.mixer || !clips.length) {
+      // Fallback to single-clip path so something still happens.
+      playGlbOpenAnimation(mvEl);
+      return;
+    }
+    const mixer = scene.mixer;
+    // Step 1: Kick off model-viewer's render loop by playing the first clip
+    // through its own API. This is what makes the renderer tick frames; the
+    // mixer.update() then runs each frame and advances ALL active actions.
+    try { mvEl.paused = false; } catch (e) {}
+    mvEl.animationName = clips[0].name;
+    try { mvEl.play({ repetitions: 1 }); } catch (e) {}
+
+    // Step 2: Configure every clip's action with LoopOnce + clamp-on-finish.
+    // mixer.clipAction is idempotent — for the clip model-viewer just
+    // started playing, this returns the SAME action, so setting
+    // clampWhenFinished here overrides model-viewer's default reset-to-0.
+    const actions = clips.map(clip => {
+      const a = mixer.clipAction(clip);
+      a.reset();
+      a.setLoop(2200, 1); // THREE.LoopOnce = 2200
+      a.clampWhenFinished = true;
+      a.play();
+      return a;
+    });
+
+    // Step 3: After the clip duration, ensure the door visibly freezes by
+    // re-pinning each action's `time` to its clip-end and setting weight=1.
+    // model-viewer can otherwise reset its own action's currentTime to 0,
+    // snapping the right panel back closed even with clamp on.
+    const dur = Math.max(...clips.map(c => c.duration || 1.25));
+    [dur * 1000 + 80, dur * 1000 + 300, dur * 1000 + 800, dur * 1000 + 1800].forEach(ms => {
+      setTimeout(() => {
+        try {
+          mvEl.pause();
+          mvEl.currentTime = dur;
+          actions.forEach((a, i) => {
+            if (!a) return;
+            a.paused = true;
+            a.time = clips[i].duration;
+            a.enabled = true;
+            a.setEffectiveWeight(1);
+          });
+          // Force one more mixer tick so the clamped pose is applied.
+          if (typeof mixer.update === 'function') mixer.update(0);
+        } catch (e) {}
+      }, ms);
+    });
+  };
+  if (mvEl.availableAnimations && mvEl.availableAnimations.length) trigger();
+  else mvEl.addEventListener('load', trigger, { once: true });
+}
+
 function playGlbOpenAnimation(mvEl) {
   if (!mvEl) return;
   // The portal-door GLBs (Door1/2/3.glb) ship with 4 clips: "Action" is the smooth
@@ -2887,13 +3482,20 @@ function playGlbOpenAnimation(mvEl) {
     // play() binds the clip, pause() stops auto-playback, then setting currentTime
     // poses the rig directly. Re-applying via rAF + setTimeout overrides anything
     // model-viewer's internal tick resets on the next frame, so the open pose holds.
-    const END = 1.04;  // end of "Action"'s keyframe range
+    // CRITICAL: model-viewer wraps `currentTime >= duration` back to 0 on its next
+    // render tick, so we land just-shy of duration with a small epsilon. The GLB's
+    // last keyframe is typically the duration anyway — pulling 10ms in still
+    // visually reads as the fully-open pose.
     try {
       mvEl.play({ repetitions: 1 });
       mvEl.pause();
+      const dur = mvEl.duration && isFinite(mvEl.duration) && mvEl.duration > 0 ? mvEl.duration : 1.04;
+      const END = Math.max(0, dur - 0.01);
       mvEl.currentTime = END;
       requestAnimationFrame(() => { mvEl.currentTime = END; });
       setTimeout(() => { mvEl.currentTime = END; }, 100);
+      setTimeout(() => { mvEl.currentTime = END; }, 400);
+      setTimeout(() => { mvEl.currentTime = END; }, 1000);
     } catch (e) { /* ignore */ }
   };
   if (mvEl.availableAnimations && mvEl.availableAnimations.length) {
@@ -2973,6 +3575,16 @@ function teleportToScene(targetId) {
   sfx.whoosh();
   // If leaving the portal scene, reset doors to closed pose so a return visit shows them shut.
   if (state.currentScene === 'scene-portals' && targetId !== 'scene-portals') resetPortalDoors();
+  // If leaving a level scene, snap that level's door GLB closed so a
+  // return visit doesn't show a stuck-open door.
+  if (state.currentScene && state.currentScene.startsWith('scene-level')) {
+    const leavingDoor = document.querySelector(`#${state.currentScene} .portal-door`);
+    if (leavingDoor) {
+      leavingDoor.classList.remove('opening', 'on');
+      const lmv = leavingDoor.querySelector('model-viewer.level-door-mv');
+      if (lmv) resetDoorAnimation(lmv);
+    }
+  }
   stage.classList.add('teleporting');
   setTimeout(() => {
     // Swap scene while stage is near-invisible
@@ -3162,6 +3774,25 @@ function wireLevelHover(sceneId) {
       sfx.hover();
     };
   });
+  // Level 3: design images (commslots) are also selectable. Clicking a
+  // design picks that option (data-comm = data-opt of the matching card).
+  if (sceneId === 'scene-level3') {
+    document.querySelectorAll('#scene-level3 .commslot[data-comm]').forEach(slot => {
+      slot.style.cursor = 'pointer';
+      slot.onclick = () => {
+        const idx = parseInt(slot.dataset.comm, 10) - 1;
+        state.focusIndex = idx;
+        updateKeyboardFocus();
+        selectCurrentOption();
+      };
+      slot.onmouseenter = () => {
+        const idx = parseInt(slot.dataset.comm, 10) - 1;
+        state.focusIndex = idx;
+        updateKeyboardFocus();
+        sfx.hover();
+      };
+    });
+  }
   updateKeyboardFocus();
 }
 
@@ -3171,6 +3802,38 @@ function selectCurrentOption() {
   const el = options[state.focusIndex];
   const opt = parseInt(el.dataset.opt, 10);
   const level = parseInt(state.currentScene.replace('scene-level', ''), 10);
+
+  // Level 2 two-stage interaction: the FIRST click on a paper roll just
+  // drops it down 300px and shrinks it 50% so the user can inspect it
+  // (and the user can drop both rolls before committing). The SECOND
+  // click on a roll already in the down position falls through to the
+  // normal selection flow below — door light, fade unpicked, etc.
+  if (state.currentScene === 'scene-level2') {
+    const slot = document.querySelector(`#scene-level2 .roll-slot[data-opt="${opt}"]`);
+    if (slot && !slot.classList.contains('roll-down')) {
+      slot.classList.add('roll-down');
+      const mv = slot.querySelector('model-viewer');
+      if (mv) {
+        // model-viewer treats the static `camera-orbit` attribute as a
+        // hard target — it gets re-applied every frame, which blocks
+        // auto-rotate's theta progression. Clear the attribute and set
+        // the initial orbit via the JS property (one-shot).
+        mv.removeAttribute('camera-orbit');
+        mv.cameraOrbit = '30deg 70deg 1.6m';
+        // Set auto-rotate via *attributes* (the property/attr sync is
+        // unreliable in this version of <model-viewer>), and ensure the
+        // render loop is unpaused — door/portal scenes leave it paused
+        // by default which would otherwise freeze the rotation.
+        mv.setAttribute('rotation-per-second', '60deg');
+        mv.setAttribute('auto-rotate-delay', '0');
+        mv.setAttribute('auto-rotate', '');
+        mv.paused = false;
+        if (typeof mv.play === 'function') { try { mv.play(); } catch(e) {} }
+      }
+      sfx.confirm && sfx.confirm(false);
+      return; // stage-1 only — skip selection bookkeeping
+    }
+  }
 
   // Light up the door (flashing red "ready to advance" signal). The
   // door is now the only path forward — clicking it advances to the
@@ -3187,31 +3850,121 @@ function selectCurrentOption() {
   state.choices[level] = opt;
   sfx.confirm(true);
 
-  // Level 3 special: also light its mockup slot
+  // Level 1 special: chosen tray jumps up while spinning quickly. Once the
+  // jump completes (~0.9s), the other trays fade away (CSS animation-delay
+  // on .tray-faded handles that part). Rotation: 150deg/s for 0.9s = ~135°,
+  // then we stop auto-rotate so the tray pauses there.
+  if (state.currentScene === 'scene-level1') {
+    document.querySelectorAll('#scene-level1 .tray-slot').forEach(slot => {
+      const slotOpt = parseInt(slot.dataset.opt, 10);
+      if (slotOpt === opt) {
+        slot.classList.add('tray-picked');
+        const mv = slot.querySelector('model-viewer');
+        if (mv) {
+          mv.setAttribute('rotation-per-second', '150deg');
+          mv.setAttribute('auto-rotate', '');
+          setTimeout(() => mv.removeAttribute('auto-rotate'), 900);
+        }
+      } else {
+        slot.classList.add('tray-faded');
+      }
+    });
+  }
+
+  // Level 2 stage-2: roll is already down (the early-return above only
+  // lets us reach this point on a SECOND click of an already-down roll).
+  // Just stamp the picked one with .roll-picked for the cyan-ring
+  // highlight; the universal .option-faded pass below dims the other.
+  if (state.currentScene === 'scene-level2') {
+    const slot = document.querySelector(`#scene-level2 .roll-slot[data-opt="${opt}"]`);
+    if (slot) slot.classList.add('roll-picked');
+  }
+
+  // Universal: across every level scene, fade out the unpicked option-cards
+  // and the level-specific main option elements (paper rolls, commslots).
+  // The CSS `.option-faded` rule has a 0.9s delay so the picked option's
+  // jump/highlight animation completes before everything else dims.
+  if (state.currentScene.startsWith('scene-level')) {
+    const sceneId = state.currentScene;
+    document.querySelectorAll(`#${sceneId} .option-card[data-opt]`).forEach(c => {
+      if (parseInt(c.dataset.opt, 10) !== opt) c.classList.add('option-faded');
+    });
+    if (sceneId === 'scene-level2') {
+      document.querySelectorAll('#scene-level2 .roll-slot').forEach(slot => {
+        if (parseInt(slot.dataset.opt, 10) !== opt) slot.classList.add('option-faded');
+      });
+    }
+    if (sceneId === 'scene-level3') {
+      document.querySelectorAll('#scene-level3 .commslot').forEach(el => {
+        if (parseInt(el.dataset.comm, 10) !== opt) el.classList.add('option-faded');
+      });
+    }
+  }
+
+  // Level 3 special: highlight the picked commslot, fade the others
+  // (universal .option-faded pass handles the fade), then trigger the
+  // Final_Door reveal sequence:
+  //   - Final_Door wrapper rises from below to ~10% from top (2.5s)
+  //   - Red bulb lights up at the apex (~2.5s post-pick)
+  //   - GLB's bundled open animation fires (elevator-style split),
+  //     revealing the costco bg behind the door panels
+  //   - Game pauses here; no auto-advance to finale.
   if (state.currentScene === 'scene-level3') {
+    const lvl3 = document.getElementById('scene-level3');
     document.querySelectorAll('#scene-level3 .commslot').forEach(c => c.classList.remove('active'));
     const slot = document.querySelector(`#scene-level3 .commslot[data-comm="${opt}"]`);
     if (slot) slot.classList.add('active');
+    // Start fading the level-3 backdrop to black right away (4s anim);
+    // by the time the door rises (after the 6s hold), the stage is dark.
+    if (lvl3) lvl3.classList.add('bg-blackout');
+    // Hold for 6s after the design pick before bringing the door in,
+    // then trigger rise → bulb light → split-open sequence.
+    setTimeout(() => {
+      if (state.currentScene !== 'scene-level3') return;
+      lvl3.classList.add('final-revealed');
+      setTimeout(() => {
+        if (state.currentScene !== 'scene-level3') return;
+        lvl3.classList.add('final-door-lit');
+        const finalMv = document.querySelector('#scene-level3 .final-door-mv');
+        // Final_Door has two clips (left + right panels) — drive both
+        // simultaneously via the internal Three.js mixer so the door
+        // splits elevator-style and freezes open.
+        if (finalMv && typeof playAllGlbAnimations === 'function') {
+          playAllGlbAnimations(finalMv);
+        }
+      }, 2500);
+    }, 6000);
   }
 }
 
 /* Click the lit level door to advance to the next scene. Only works
-   after a choice has been made (`.on` class set by selectCurrentOption). */
+   after a choice has been made (`.on` class set by selectCurrentOption).
+   Sequence:
+     1. Set `.opening` on the door — fades the destination preview in
+        (CSS transition, ~0.5s) and triggers the Monster Snacks bag
+        reveal + jump-spin animation behind the door.
+     2. Play the GLB Action clip on the door's main model-viewer to
+        swing the panel open.
+     3. After the bag's jump-spin finishes (~3s), teleport to next scene. */
 function advanceFromLevelDoor(door) {
   if (!door || !door.classList.contains('on')) return;
+  if (door.classList.contains('opening')) return; // ignore re-clicks during transition
   const sceneEl = door.closest('.scene');
   if (!sceneEl) return;
   const level = parseInt(sceneEl.id.replace('scene-level', ''), 10);
   const nextScene = ({ 1: 'scene-level2', 2: 'scene-level3', 3: 'scene-finale' })[level];
   if (!nextScene) return;
-  // Find the matching door GLB and play its baked open animation.
-  const mv = door.querySelector('model-viewer');
+  door.classList.add('opening');
+  // The level-door wrapper contains TWO model-viewers (the door GLB and
+  // the chip-bag preview) — the door GLB has class .level-door-mv.
+  const mv = door.querySelector('model-viewer.level-door-mv') ||
+             door.querySelector('model-viewer:not(.preview-monster)');
   if (mv) playGlbOpenAnimation(mv);
   setTimeout(() => {
     if (state.currentScene === 'scene-level' + level) {
       teleportToScene(nextScene);
     }
-  }, 900);
+  }, 3300);
 }
 
 function wireLevelDoors() {
@@ -3221,6 +3974,50 @@ function wireLevelDoors() {
     door.onkeydown = (e) => {
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); advanceFromLevelDoor(door); }
     };
+  });
+}
+
+/* ---------- ShelfSmart pill toggles option-card descriptions ----------
+   Used on scene-level1 (yellow pill) and scene-level2 (blue pill). The
+   sceneId + buttonId pair are passed in so each level wires its own
+   pill independently. Default = descriptions hidden. */
+function wireShelfSmartToggle(sceneId, buttonId) {
+  // Backwards-compat: if called without args, default to scene-level1.
+  sceneId  = sceneId  || 'scene-level1';
+  buttonId = buttonId || 'lvl1-shelfsmart-toggle';
+  const scene = document.getElementById(sceneId);
+  const btn   = document.getElementById(buttonId);
+  if (!scene || !btn) return;
+  const apply = () => {
+    const on = scene.classList.contains('show-descriptions');
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+  };
+  const toggle = () => {
+    scene.classList.toggle('show-descriptions');
+    apply();
+    sfx.click && sfx.click();
+  };
+  btn.onclick = toggle;
+  btn.onkeydown = (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
+  };
+  apply();
+}
+
+/* ---------- LEVEL 1 — trays spin only while flying in ----------
+   The trayDrop CSS animation has staggered delays per slot. We turn
+   auto-rotate on at scene enter and turn it off on each slot's
+   animationend, so trays stop spinning the moment they land at rest. */
+function wireTrayFlyInRotation() {
+  document.querySelectorAll('#scene-level1 .tray-slot').forEach(slot => {
+    const mv = slot.querySelector('model-viewer');
+    if (!mv) return;
+    mv.setAttribute('auto-rotate', '');
+    const stop = () => mv.removeAttribute('auto-rotate');
+    slot.addEventListener('animationend', stop, { once: true });
+    // Safety net — staggered delays now go up to 9s + 4s anim, so allow
+    // ~14s before forcing a stop in case animationend misses fire.
+    setTimeout(stop, 14000);
   });
 }
 
