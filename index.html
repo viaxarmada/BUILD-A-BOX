@@ -956,11 +956,10 @@ body {
    toggles `.show-descriptions` on the scene to fade them in. */
 #scene-level1 .option-card {
   display: none;
-  /* Trimmed 5% from the prior +50% bump to settle on a less overwhelming
-     size; padding scaled the same factor so the card proportions stay
-     consistent. */
-  font-size: clamp(19.24px, 2.351vw, 29.93px);
-  padding: clamp(11.4px, 1.71vw, 19.95px) clamp(14.25px, 2.14vw, 25.65px);
+  /* Another -5% pass after the previous trim — total now ~10% off the
+     +50% peak. Padding scaled the same factor. */
+  font-size: clamp(18.28px, 2.233vw, 28.43px);
+  padding: clamp(10.83px, 1.62vw, 18.95px) clamp(13.54px, 2.03vw, 24.37px);
 }
 #scene-level1.show-descriptions .option-card { display: block; }
 #scene-level1 .brand-label {
@@ -977,11 +976,11 @@ body {
   box-shadow: 0 0 0 3px var(--cyan), 0 6px 14px rgba(0, 0, 0, 0.35);
 }
 
-/* Level 2 description cards: previously +30%, then trimmed 5% to match
-   the level-1 reduction so the descriptions don't dominate the scene. */
+/* Level 2 description cards: another -5% applied on top of the previous
+   reduction — total ~9.75% off the +30% peak. */
 #scene-level2 .option-card {
-  font-size: clamp(16.67px, 2.038vw, 25.94px);
-  padding: clamp(9.5px, 1.482vw, 17.1px) clamp(12.35px, 1.853vw, 21.85px);
+  font-size: clamp(15.84px, 1.936vw, 24.64px);
+  padding: clamp(9.03px, 1.408vw, 16.25px) clamp(11.73px, 1.760vw, 20.76px);
 }
 
 /* Level 2 ShelfSmart pill: 2x larger (font + padding), positioned 70px
@@ -1251,11 +1250,11 @@ body {
   animation: lightFlash 0.45s ease-in-out infinite;
 }
 
-/* Level 3 description cards: was 1.5×, trimmed another 5% so the card
-   text matches the level-1 / level-2 reductions. */
+/* Level 3 description cards: another -5% applied on top of the previous
+   trim, in lockstep with level-1 / level-2. */
 #scene-level3 .option-card {
-  font-size: clamp(19.24px, 2.351vw, 29.93px);
-  padding: clamp(8.55px, 1.283vw, 15.2px) clamp(10.45px, 1.568vw, 19px);
+  font-size: clamp(18.28px, 2.233vw, 28.43px);
+  padding: clamp(8.12px, 1.219vw, 14.44px) clamp(9.93px, 1.490vw, 18.05px);
   letter-spacing: 0.02em;
   line-height: 1.4;
 }
