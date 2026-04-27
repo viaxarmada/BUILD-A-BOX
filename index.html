@@ -956,11 +956,11 @@ body {
    toggles `.show-descriptions` on the scene to fade them in. */
 #scene-level1 .option-card {
   display: none;
-  /* 50% larger than the default option-card sizing — bumps font-size and
-     padding while keeping em-based child sizing (h4, num, bullets) in
-     proportion. Cards become taller as the text wraps more. */
-  font-size: clamp(20.25px, 2.475vw, 31.5px);
-  padding: clamp(12px, 1.8vw, 21px) clamp(15px, 2.25vw, 27px);
+  /* Trimmed 5% from the prior +50% bump to settle on a less overwhelming
+     size; padding scaled the same factor so the card proportions stay
+     consistent. */
+  font-size: clamp(19.24px, 2.351vw, 29.93px);
+  padding: clamp(11.4px, 1.71vw, 19.95px) clamp(14.25px, 2.14vw, 25.65px);
 }
 #scene-level1.show-descriptions .option-card { display: block; }
 #scene-level1 .brand-label {
@@ -977,11 +977,11 @@ body {
   box-shadow: 0 0 0 3px var(--cyan), 0 6px 14px rgba(0, 0, 0, 0.35);
 }
 
-/* Level 2 description cards bumped 30% larger (font + padding) so they
-   visually match the bigger tray-selection cards on level 1. */
+/* Level 2 description cards: previously +30%, then trimmed 5% to match
+   the level-1 reduction so the descriptions don't dominate the scene. */
 #scene-level2 .option-card {
-  font-size: clamp(17.55px, 2.145vw, 27.3px);
-  padding: clamp(10px, 1.56vw, 18px) clamp(13px, 1.95vw, 23px);
+  font-size: clamp(16.67px, 2.038vw, 25.94px);
+  padding: clamp(9.5px, 1.482vw, 17.1px) clamp(12.35px, 1.853vw, 21.85px);
 }
 
 /* Level 2 ShelfSmart pill: 2x larger (font + padding), positioned 70px
@@ -1251,13 +1251,11 @@ body {
   animation: lightFlash 0.45s ease-in-out infinite;
 }
 
-/* Level 3 description cards: 1.5× the default font (the previous 3× size
-   was scaled down 50% per the latest layout pass — still visibly larger
-   than the base cards, with extra letter-spacing + line-height for
-   legibility). */
+/* Level 3 description cards: was 1.5×, trimmed another 5% so the card
+   text matches the level-1 / level-2 reductions. */
 #scene-level3 .option-card {
-  font-size: clamp(20.25px, 2.475vw, 31.5px);
-  padding: clamp(9px, 1.35vw, 16px) clamp(11px, 1.65vw, 20px);
+  font-size: clamp(19.24px, 2.351vw, 29.93px);
+  padding: clamp(8.55px, 1.283vw, 15.2px) clamp(10.45px, 1.568vw, 19px);
   letter-spacing: 0.02em;
   line-height: 1.4;
 }
@@ -1556,6 +1554,9 @@ body {
 
 /* ===== Keyboard hint footer ===== */
 .kb-hint {
+  /* Bottom keyboard-hint strip removed per latest pass — was a visual
+     distraction. Re-enable by changing display back to flex if needed. */
+  display: none !important;
   position: absolute;
   left: 50%;
   bottom: 3%;
@@ -1563,7 +1564,6 @@ body {
   z-index: 50;
   font-size: clamp(15px, 1.65vw, 21px);
   color: rgba(255, 255, 255, 0.65);
-  display: flex;
   gap: 14px;
   letter-spacing: 0.08em;
   pointer-events: none;
