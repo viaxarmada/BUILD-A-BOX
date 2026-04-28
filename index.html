@@ -1040,31 +1040,20 @@ body {
   0%   { transform: translateY(100%) scale(0.8); opacity: 0; }
   100% { transform: translateY(0) scale(1); opacity: 1; }
 }
-/* Two-stage interaction:
-   1) First click on a roll → adds .roll-down → roll drops 300px and
-      scales to 50% so the user can inspect it from the warehouse floor.
-      Both rolls can be in this state simultaneously.
-   2) Second click on a down-roll → adds .roll-picked → the roll keeps
-      its down position but gets a cyan ring; the universal .option-faded
-      block then dims the other roll + descriptions and the door light
-      activates. */
-@keyframes rollDropToFloor {
-  0%   { opacity: 1; transform: translate(0, 0)     scale(1, 1); }
-  /* End pose: 200px lower (300 → 500) and a non-uniform scale that
-     keeps the previous +300% height (scaleY 2) but trims the width by
-     50% (scaleX 1) so the rolls read as taller, slimmer cylinders. */
-  100% { opacity: 1; transform: translate(0, 500px) scale(1, 2); }
+/* Single-click selection (mirrors level-1 trays): picked roll jumps up
+   and spins quickly while it's airborne; the other roll + descriptions
+   fade in via the universal .option-faded block (whose 0.9s delay
+   matches this jump's duration). */
+@keyframes rollSelectJump {
+  0%   { opacity: 1; transform: translate(0, 0)     scale(1); }
+  35%  { opacity: 1; transform: translate(0, -90px) scale(1.18); }
+  70%  { opacity: 1; transform: translate(0, -30px) scale(1.10); }
+  100% { opacity: 1; transform: translate(0, -55px) scale(1.10); }
 }
-#scene-level2.active .roll-slot[data-opt].roll-down {
-  animation: rollDropToFloor 0.9s cubic-bezier(0.4, 0, 0.6, 1) forwards;
+#scene-level2.active .roll-slot[data-opt].roll-picked {
+  animation: rollSelectJump 0.9s cubic-bezier(0.4, 0, 0.6, 1) forwards;
   z-index: 11;
-  filter: drop-shadow(0 18px 28px rgba(0, 0, 0, 0.6));
-}
-/* Selection highlight while the roll stays in its down position. */
-#scene-level2.active .roll-slot[data-opt].roll-down.roll-picked {
-  outline: 4px solid var(--cyan);
-  outline-offset: 8px;
-  border-radius: 12px;
+  filter: drop-shadow(0 14px 26px rgba(0, 0, 0, 0.55));
 }
 /* This rule must declare its animation AFTER `.roll-down` above so that
    when both classes coexist on a fading sibling, the fade wins the
@@ -3804,37 +3793,9 @@ function selectCurrentOption() {
   const opt = parseInt(el.dataset.opt, 10);
   const level = parseInt(state.currentScene.replace('scene-level', ''), 10);
 
-  // Level 2 two-stage interaction: the FIRST click on a paper roll just
-  // drops it down 300px and shrinks it 50% so the user can inspect it
-  // (and the user can drop both rolls before committing). The SECOND
-  // click on a roll already in the down position falls through to the
-  // normal selection flow below — door light, fade unpicked, etc.
-  if (state.currentScene === 'scene-level2') {
-    const slot = document.querySelector(`#scene-level2 .roll-slot[data-opt="${opt}"]`);
-    if (slot && !slot.classList.contains('roll-down')) {
-      slot.classList.add('roll-down');
-      const mv = slot.querySelector('model-viewer');
-      if (mv) {
-        // model-viewer treats the static `camera-orbit` attribute as a
-        // hard target — it gets re-applied every frame, which blocks
-        // auto-rotate's theta progression. Clear the attribute and set
-        // the initial orbit via the JS property (one-shot).
-        mv.removeAttribute('camera-orbit');
-        mv.cameraOrbit = '30deg 70deg 1.6m';
-        // Set auto-rotate via *attributes* (the property/attr sync is
-        // unreliable in this version of <model-viewer>), and ensure the
-        // render loop is unpaused — door/portal scenes leave it paused
-        // by default which would otherwise freeze the rotation.
-        mv.setAttribute('rotation-per-second', '60deg');
-        mv.setAttribute('auto-rotate-delay', '0');
-        mv.setAttribute('auto-rotate', '');
-        mv.paused = false;
-        if (typeof mv.play === 'function') { try { mv.play(); } catch(e) {} }
-      }
-      sfx.confirm && sfx.confirm(false);
-      return; // stage-1 only — skip selection bookkeeping
-    }
-  }
+  // (Level 2's prior two-stage interaction was replaced with the level-1
+  // single-click pattern below — picked roll jumps + spins, others fade,
+  // door lights up. See the .roll-picked block further down.)
 
   // Light up the door (flashing red "ready to advance" signal). The
   // door is now the only path forward — clicking it advances to the
@@ -3872,13 +3833,28 @@ function selectCurrentOption() {
     });
   }
 
-  // Level 2 stage-2: roll is already down (the early-return above only
-  // lets us reach this point on a SECOND click of an already-down roll).
-  // Just stamp the picked one with .roll-picked for the cyan-ring
-  // highlight; the universal .option-faded pass below dims the other.
+  // Level 2 selection (single-click, mirrors level-1 trays): picked roll
+  // jumps up and spins quickly for 0.9s, then settles raised. The other
+  // roll + descriptions fade in the universal .option-faded pass below
+  // (its 0.9s delay is timed to start exactly when this jump completes).
   if (state.currentScene === 'scene-level2') {
     const slot = document.querySelector(`#scene-level2 .roll-slot[data-opt="${opt}"]`);
-    if (slot) slot.classList.add('roll-picked');
+    if (slot) {
+      slot.classList.add('roll-picked');
+      const mv = slot.querySelector('model-viewer');
+      if (mv) {
+        // Mixer-driven 3D rotation while the slot jumps — clear any
+        // static camera-orbit attribute so theta can progress freely.
+        mv.removeAttribute('camera-orbit');
+        mv.cameraOrbit = '0deg 75deg 2.25m';
+        mv.setAttribute('rotation-per-second', '600deg');
+        mv.setAttribute('auto-rotate-delay', '0');
+        mv.setAttribute('auto-rotate', '');
+        try { mv.paused = false; } catch (e) {}
+        if (typeof mv.play === 'function') { try { mv.play(); } catch (e) {} }
+        setTimeout(() => mv.removeAttribute('auto-rotate'), 900);
+      }
+    }
   }
 
   // Universal: across every level scene, fade out the unpicked option-cards
