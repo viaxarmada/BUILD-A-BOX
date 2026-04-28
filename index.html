@@ -35,7 +35,8 @@
   --text: #FFFFFF;
   --text-muted: #B8D4E8;
   --ink: #0B1E3A;
-  --shadow-deep: 0 20px 60px rgba(0, 0, 0, 0.45);
+  /* Softened so the stage edge blends with the page bg (was 0 20px 60px rgba(0,0,0,0.45)). */
+  --shadow-deep: 0 12px 60px rgba(0, 0, 0, 0.18);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -44,7 +45,9 @@ html, body {
   height: 100%;
   overflow: hidden;
   font-family: 'Rajdhani', 'Segoe UI', system-ui, sans-serif;
-  background: radial-gradient(ellipse at center, #062542 0%, #010812 100%);
+  /* Match the stage's base gradient so the letterbox area blends into
+     the stage seamlessly at any viewport size — phone through 4K. */
+  background: linear-gradient(180deg, #031529 0%, #0a2a4d 100%);
   color: var(--text);
   -webkit-font-smoothing: antialiased;
   user-select: none;
@@ -68,7 +71,9 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: radial-gradient(ellipse at center, #062542 0%, #010812 100%);
+  /* Same gradient as html/body so the letterbox area is uniform across
+     all viewports and the stage edge blends in seamlessly. */
+  background: linear-gradient(180deg, #031529 0%, #0a2a4d 100%);
   overflow: hidden;
 }
 #stage {
@@ -807,36 +812,40 @@ body {
    per-tray translate distances are baked into the keyframes since each
    tray's centre-top offset depends on its own positioned location. */
 #scene-level1.active .tray-slot {
-  animation-duration: 4s;
+  /* Total 5s: 0.4s fade-in, 2s hover at centre-top (slow rotation
+     happening throughout via model-viewer auto-rotate at 7.5deg/s),
+     then 2.6s arc + land. Sequential delays bumped to keep one-tray-
+     at-a-time pacing. */
+  animation-duration: 5s;
   animation-timing-function: cubic-bezier(0.45, 0.05, 0.4, 1.0);
   animation-fill-mode: both;
 }
 #scene-level1.active .tray-slot[data-opt="1"] { animation-name: traySwoop1; animation-delay: 1.0s; }
-#scene-level1.active .tray-slot[data-opt="2"] { animation-name: traySwoop2; animation-delay: 5.0s; }
-#scene-level1.active .tray-slot[data-opt="3"] { animation-name: traySwoop3; animation-delay: 9.0s; }
+#scene-level1.active .tray-slot[data-opt="2"] { animation-name: traySwoop2; animation-delay: 6.0s; }
+#scene-level1.active .tray-slot[data-opt="3"] { animation-name: traySwoop3; animation-delay: 11.0s; }
 @keyframes traySwoop1 {
   /* fade in at centre-top */
   0%   { transform: translate(592px, -328px) scale(0.9); opacity: 0; }
   8%   { transform: translate(592px, -328px) scale(1);   opacity: 1; }
-  /* hover there with slow rotation while user describes the tray */
-  35%  { transform: translate(592px, -328px) scale(1);   opacity: 1; }
+  /* hover for 2s with slow rotation (8% → 48% of 5s = 2s) */
+  48%  { transform: translate(592px, -328px) scale(1);   opacity: 1; }
   /* arc apex — lifted slightly above the linear path */
-  72%  { transform: translate(320px, -200px) scale(1.04); opacity: 1; }
+  78%  { transform: translate(320px, -200px) scale(1.04); opacity: 1; }
   /* land + settle at final position */
   100% { transform: translate(0, 0) scale(1);            opacity: 1; }
 }
 @keyframes traySwoop2 {
   0%   { transform: translate(228px, -382px) scale(0.9); opacity: 0; }
   8%   { transform: translate(228px, -382px) scale(1);   opacity: 1; }
-  35%  { transform: translate(228px, -382px) scale(1);   opacity: 1; }
-  72%  { transform: translate(140px, -240px) scale(1.04); opacity: 1; }
+  48%  { transform: translate(228px, -382px) scale(1);   opacity: 1; }
+  78%  { transform: translate(140px, -240px) scale(1.04); opacity: 1; }
   100% { transform: translate(0, 0) scale(1);            opacity: 1; }
 }
 @keyframes traySwoop3 {
   0%   { transform: translate(-168px, -326px) scale(0.9); opacity: 0; }
   8%   { transform: translate(-168px, -326px) scale(1);   opacity: 1; }
-  35%  { transform: translate(-168px, -326px) scale(1);   opacity: 1; }
-  72%  { transform: translate(-90px,  -200px) scale(1.04); opacity: 1; }
+  48%  { transform: translate(-168px, -326px) scale(1);   opacity: 1; }
+  78%  { transform: translate(-90px,  -200px) scale(1.04); opacity: 1; }
   100% { transform: translate(0, 0) scale(1);             opacity: 1; }
 }
 
@@ -4039,9 +4048,9 @@ function wireTrayFlyInRotation() {
     mv.setAttribute('auto-rotate', '');
     const stop = () => mv.removeAttribute('auto-rotate');
     slot.addEventListener('animationend', stop, { once: true });
-    // Safety net — staggered delays now go up to 9s + 4s anim, so allow
-    // ~14s before forcing a stop in case animationend misses fire.
-    setTimeout(stop, 14000);
+    // Safety net — staggered delays now go up to 11s + 5s anim, so allow
+    // ~17s before forcing a stop in case animationend misses fire.
+    setTimeout(stop, 17000);
   });
 }
 
