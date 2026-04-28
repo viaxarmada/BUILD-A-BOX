@@ -974,8 +974,8 @@ body {
   cursor: pointer;
   user-select: none;
   /* 2x larger than the default brand-label, scoped to scene-level1 only. */
-  font-size: 74.1px;
-  padding: 19px 49.4px;
+  font-size: 70.395px;
+  padding: 18.05px 46.93px;
   bottom: calc(3% + 100px);
 }
 #scene-level1 .brand-label:hover { transform: translateY(-2px); }
@@ -997,8 +997,8 @@ body {
    description-toggle button (cursor + click handler in JS). */
 #scene-level2 .brand-label.tr {
   top: calc(8% + 30px);
-  font-size: 74.1px;
-  padding: 19px 49.4px;
+  font-size: 70.395px;
+  padding: 18.05px 46.93px;
   cursor: pointer;
   user-select: none;
 }
@@ -1282,8 +1282,8 @@ body {
    latest layout pass → effectively ×2 the default brand-label sizing.
    Also wired as the descriptions toggle button (mirrors level 1/2). */
 #scene-level3 .brand-label.tr {
-  font-size: 74.1px;
-  padding: 19px 49.4px;
+  font-size: 70.395px;
+  padding: 18.05px 46.93px;
   cursor: pointer;
   user-select: none;
 }
@@ -1920,7 +1920,11 @@ body {
    .portal-light is kept as a legacy alias so existing markup still works. */
 .door-bulb-light, .portal-slot .portal-light {
   position: absolute;
-  top: 14.5%;
+  /* Verified via THREE.Vector3.project on the Sphere mesh: the GLB's
+     painted bulb sits at ~11.9% from the slot top in the rendered
+     canvas. Was 14.5% — that put the red overlay 2.6% below the
+     actual bulb. */
+  top: 11.9%;
   left: 49.5%;
   transform: translate(-50%, -50%);
   width: 11%;
