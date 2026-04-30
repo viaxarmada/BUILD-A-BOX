@@ -1075,16 +1075,15 @@ body {
    jumps up dramatically from its down position, rotates, and settles
    visibly raised above the floor. The universal .option-faded pass
    fades the other roll + descriptions in parallel. */
-@keyframes rollJumpAndBack {
-  /* Peak at 35% lifts the slot 135px (15% of 900-stage) above the down
-     position, then settles back at the floor. */
-  0%   { transform: translate(0, 500px) scale(1, 2);       }
-  35%  { transform: translate(0, 365px) scale(1.05, 2.05); }
-  70%  { transform: translate(0, 470px) scale(1.02, 2.02); }
-  100% { transform: translate(0, 500px) scale(1, 2);       }
-}
+/* On commit (second click on an already-down roll), the picked roll
+   STAYS in place at its down position — no jump animation. We just
+   add a cyan selection ring + drop-shadow as visual markers, and the
+   universal .option-faded pass dims the other roll + descriptions. */
 #scene-level2.active .roll-slot[data-opt].roll-down.roll-picked {
-  animation: rollJumpAndBack 0.9s cubic-bezier(0.4, 0, 0.6, 1) forwards;
+  /* Re-declare the rollDropToFloor animation so the down-pose forwards-
+     fill stays applied (otherwise replacing the `animation` shorthand
+     would lose the previous fill state and snap the slot back). */
+  animation: rollDropToFloor 0.9s cubic-bezier(0.4, 0, 0.6, 1) forwards;
   outline: 4px solid var(--cyan);
   outline-offset: 8px;
   border-radius: 12px;
@@ -3902,28 +3901,14 @@ function selectCurrentOption() {
 
   // Level 2 stage-2: roll is already down (the early-return above only
   // lets us reach this point on a SECOND click of an already-down roll).
-  // The picked roll runs `rollJumpAndBack` (jumps up 15% of stage, drops
-  // back) while a fast 3D auto-rotate spins the model. Universal
-  // .option-faded pass below fades the other roll + descriptions.
+  // The picked roll just gets a `.roll-picked` class — its CSS keeps
+  // it in place at the down position with a cyan ring, and the
+  // universal .option-faded pass dims the other roll + descriptions.
+  // The gentle stage-1 auto-rotate (60deg/s) on the model-viewer keeps
+  // running so the picked roll continues its slow inspection spin.
   if (state.currentScene === 'scene-level2') {
     const slot = document.querySelector(`#scene-level2 .roll-slot[data-opt="${opt}"]`);
-    if (slot) {
-      slot.classList.add('roll-picked');
-      const mv = slot.querySelector('model-viewer');
-      if (mv) {
-        // Re-engage the render loop: clear the static camera-orbit
-        // attribute and set the initial orbit via the JS property so
-        // auto-rotate's theta is free to advance every frame.
-        mv.removeAttribute('camera-orbit');
-        mv.cameraOrbit = '0deg 75deg 2.25m';
-        mv.setAttribute('rotation-per-second', '600deg');
-        mv.setAttribute('auto-rotate-delay', '0');
-        mv.setAttribute('auto-rotate', '');
-        try { mv.paused = false; } catch (e) {}
-        if (typeof mv.play === 'function') { try { mv.play(); } catch (e) {} }
-        setTimeout(() => mv.removeAttribute('auto-rotate'), 900);
-      }
-    }
+    if (slot) slot.classList.add('roll-picked');
   }
 
   // Universal: across every level scene, fade out the unpicked option-cards
