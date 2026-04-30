@@ -1075,15 +1075,18 @@ body {
    jumps up dramatically from its down position, rotates, and settles
    visibly raised above the floor. The universal .option-faded pass
    fades the other roll + descriptions in parallel. */
-/* On commit (second click on an already-down roll), the picked roll
-   STAYS in place at its down position — no jump animation. We just
-   add a cyan selection ring + drop-shadow as visual markers, and the
-   universal .option-faded pass dims the other roll + descriptions. */
+/* On commit (second click), the picked roll jumps up briefly and
+   takes a 5° tilt that holds when it settles back at the down
+   position. The universal .option-faded pass fades the other roll
+   + descriptions in parallel. */
+@keyframes rollPickJumpTilt {
+  0%   { transform: translate(0, 500px) scale(1, 2) rotate(0deg);  }
+  35%  { transform: translate(0, 350px) scale(1, 2) rotate(-5deg); }
+  70%  { transform: translate(0, 460px) scale(1, 2) rotate(-5deg); }
+  100% { transform: translate(0, 500px) scale(1, 2) rotate(-5deg); }
+}
 #scene-level2.active .roll-slot[data-opt].roll-down.roll-picked {
-  /* Re-declare the rollDropToFloor animation so the down-pose forwards-
-     fill stays applied (otherwise replacing the `animation` shorthand
-     would lose the previous fill state and snap the slot back). */
-  animation: rollDropToFloor 0.9s cubic-bezier(0.4, 0, 0.6, 1) forwards;
+  animation: rollPickJumpTilt 0.9s cubic-bezier(0.4, 0, 0.6, 1) forwards;
   outline: 4px solid var(--cyan);
   outline-offset: 8px;
   border-radius: 12px;
