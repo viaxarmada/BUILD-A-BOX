@@ -3902,16 +3902,20 @@ function selectCurrentOption() {
 
   // Level 2 stage-2: roll is already down (the early-return above only
   // lets us reach this point on a SECOND click of an already-down roll).
-  // The picked roll runs `rollJumpAndBack` (jumps up from down position,
-  // rotates fast, drops back down) — fast 3D auto-rotate accompanies
-  // the jump for visual interest. Universal .option-faded pass below
-  // fades the other roll + descriptions.
+  // The picked roll runs `rollJumpAndBack` (jumps up 15% of stage, drops
+  // back) while a fast 3D auto-rotate spins the model. Universal
+  // .option-faded pass below fades the other roll + descriptions.
   if (state.currentScene === 'scene-level2') {
     const slot = document.querySelector(`#scene-level2 .roll-slot[data-opt="${opt}"]`);
     if (slot) {
       slot.classList.add('roll-picked');
       const mv = slot.querySelector('model-viewer');
       if (mv) {
+        // Re-engage the render loop: clear the static camera-orbit
+        // attribute and set the initial orbit via the JS property so
+        // auto-rotate's theta is free to advance every frame.
+        mv.removeAttribute('camera-orbit');
+        mv.cameraOrbit = '0deg 75deg 2.25m';
         mv.setAttribute('rotation-per-second', '600deg');
         mv.setAttribute('auto-rotate-delay', '0');
         mv.setAttribute('auto-rotate', '');
