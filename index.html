@@ -965,17 +965,17 @@ body {
    toggles `.show-descriptions` on the scene to fade them in. */
 #scene-level1 .option-card {
   display: none;
-  /* Fourth -5% pass — total now ~18.6% off the +50% peak. */
-  font-size: 23.09px;
-  padding: 15.39px 19.79px;
+  /* Fifth -10% pass — option-card sizing unified across L1/L2/L3. */
+  font-size: 20.78px;
+  padding: 13.85px 17.81px;
 }
 #scene-level1.show-descriptions .option-card { display: block; }
 #scene-level1 .brand-label {
   cursor: pointer;
   user-select: none;
-  /* 2x larger than the default brand-label, scoped to scene-level1 only. */
-  font-size: 63.36px;
-  padding: 16.25px 42.24px;
+  /* -10% pass — ShelfSmart pill sizing unified across L1/L2/L3. */
+  font-size: 57.02px;
+  padding: 14.63px 38.02px;
   bottom: calc(3% + 100px);
 }
 #scene-level1 .brand-label:hover { transform: translateY(-2px); }
@@ -984,23 +984,20 @@ body {
   box-shadow: 0 0 0 3px var(--cyan), 0 6px 14px rgba(0, 0, 0, 0.35);
 }
 
-/* Level 2 description cards: fourth -5% pass — total ~18.6% off the
-   +30% peak. */
+/* Level 2 description cards: fifth -10% pass — sizing unified across
+   L1/L2/L3. */
 #scene-level2 .option-card {
-  font-size: 20.02px;
-  padding: 13.20px 16.87px;
+  font-size: 20.78px;
+  padding: 13.85px 17.81px;
 }
 
-/* Level 2 ShelfSmart pill: 2x larger (font + padding), positioned 70px
-   below its `top: 8%` anchor (was 100px, raised 30px). Scoped so the
-   level-1 / level-3 pills keep their own sizing. Also doubles as the
+/* Level 2 ShelfSmart pill: -10% pass; sizing unified across L1/L2/L3.
+   Still positioned 60px above the `top: 8%` anchor; doubles as the
    description-toggle button (cursor + click handler in JS). */
 #scene-level2 .brand-label.tr {
-  /* Lifted another 90px (10% of 900-stage) and shrunk 10% in both
-     font + padding per latest pass. */
   top: calc(8% - 60px);
-  font-size: 63.36px;
-  padding: 16.25px 42.24px;
+  font-size: 57.02px;
+  padding: 14.63px 38.02px;
   cursor: pointer;
   user-select: none;
 }
@@ -1273,22 +1270,21 @@ body {
   animation: lightFlash 0.45s ease-in-out infinite;
 }
 
-/* Level 3 description cards: fourth -5% pass, in lockstep with
-   level-1 / level-2. */
+/* Level 3 description cards: fifth -10% pass — sizing unified across
+   L1/L2/L3. */
 #scene-level3 .option-card {
-  font-size: 23.09px;
-  padding: 11.73px 14.66px;
+  font-size: 20.78px;
+  padding: 13.85px 17.81px;
   letter-spacing: 0.02em;
   line-height: 1.4;
 }
 #scene-level3 .option-card ul li { margin-bottom: 6px; }
 
-/* Level 3 ShelfSmart pill: was +150% (×2.5), then trimmed 20% per the
-   latest layout pass → effectively ×2 the default brand-label sizing.
+/* Level 3 ShelfSmart pill: -10% pass; sizing unified across L1/L2/L3.
    Also wired as the descriptions toggle button (mirrors level 1/2). */
 #scene-level3 .brand-label.tr {
-  font-size: 63.36px;
-  padding: 16.25px 42.24px;
+  font-size: 57.02px;
+  padding: 14.63px 38.02px;
   cursor: pointer;
   user-select: none;
 }
