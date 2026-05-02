@@ -734,9 +734,19 @@ body {
 }
 .option-card.blue { background: #86DFFF; }
 .option-card.picked { animation: cardFlash 0.6s ease forwards; }
-/* Opacity is included in every keyframe + fill-mode is `forwards` — without
-   that, replacing the seq-down animation here would drop the previous
-   `both`-fill opacity:1 and the picked card could end up at opacity 0. */
+/* The card carries `data-delay="N"`, which sets `animation-delay`. When
+   `.picked` replaces the seq-down animation with cardFlash, that 0.78s
+   delay is inherited; combined with cardFlash's `forwards` fill (no
+   backwards fill) the underlying base opacity:0 (.scene [class*="seq-"])
+   would show through during the delay and the picked card would briefly
+   disappear right after commit. Override animation-delay to 0 and use
+   `both` fill at scoped specificity so the picked description stays
+   visible the whole time. */
+#scene-level1 .option-card.picked,
+#scene-level2 .option-card.picked,
+#scene-level3 .option-card.picked {
+  animation: cardFlash 0.6s ease 0s both;
+}
 @keyframes cardFlash {
   0%   { opacity: 1; box-shadow: 0 0 0 0 #FFF; }
   50%  { opacity: 1; box-shadow: 0 0 0 10px rgba(255, 255, 255, 0.6); background: #FFFBE0; }
@@ -892,7 +902,6 @@ body {
 #scene-level1.active .option-card.option-faded,
 #scene-level2.active .option-card.option-faded,
 #scene-level3.active .level3-options .option-card.option-faded,
-#scene-level2.active .roll-slot.option-faded,
 #scene-level3.active .mockup .commslot.option-faded {
   animation: trayFadeOut 0.6s ease 0.9s both;
   pointer-events: none;
@@ -1077,8 +1086,12 @@ body {
    stays there. The universal .option-faded pass fades the other roll
    + descriptions in parallel. */
 @keyframes rollPickRise {
-  0%   { transform: translate(0, 500px) scale(1, 2); }
-  100% { transform: translate(0, 320px) scale(1, 2); }
+  /* Include opacity:1 in every keyframe — without it, this animation
+     replaces rollDropToFloor (which DID animate opacity 1 → 1) and the
+     picked roll's opacity would fall back to the base .roll-slot
+     opacity:0, making the committed roll invisible inside its cyan ring. */
+  0%   { opacity: 1; transform: translate(0, 500px) scale(1, 2); }
+  100% { opacity: 1; transform: translate(0, 320px) scale(1, 2); }
 }
 #scene-level2.active .roll-slot[data-opt].roll-down.roll-picked {
   animation: rollPickRise 0.6s cubic-bezier(0.4, 0, 0.6, 1) forwards;
@@ -1087,11 +1100,29 @@ body {
   border-radius: 12px;
   filter: drop-shadow(0 18px 28px rgba(0, 0, 0, 0.6));
 }
-/* This rule must declare its animation AFTER `.roll-down` above so that
-   when both classes coexist on a fading sibling, the fade wins the
-   cascade tie and runs to completion. */
-#scene-level2.active .roll-slot[data-opt].option-faded {
-  animation: trayFadeOut 0.6s ease 0.9s both;
+/* When the user commits a paper pick (second click on a down roll), the
+   unpicked roll must fade out IN PLACE. The shared `trayFadeOut` keyframe
+   animates `transform`, which would replace the held `rollDropToFloor`
+   pose and snap the unpicked roll back up to the upright origin during
+   the 0.9s delay before opacity starts dropping. `paperFadeOut` only
+   animates opacity + filter so the `transform` stays whatever the
+   element already has. */
+@keyframes paperFadeOut {
+  0%   { opacity: 1; filter: blur(0) saturate(1); }
+  100% { opacity: 0; filter: blur(3px) saturate(0.4); }
+}
+/* Unpicked roll that was already down at commit time — pin the down
+   pose with a static transform so the new (transform-free) fade
+   animation can't snap it back up. */
+#scene-level2.active .roll-slot[data-opt].roll-down.option-faded {
+  transform: translate(0, 500px) scale(1, 2);
+  animation: paperFadeOut 0.6s ease 0.9s both;
+  pointer-events: none;
+}
+/* Unpicked roll that was never dropped (user committed without a
+   stage-1 click on it) — fade in place from the upright pose. */
+#scene-level2.active .roll-slot[data-opt]:not(.roll-down).option-faded {
+  animation: paperFadeOut 0.6s ease 0.9s both;
   pointer-events: none;
 }
 
