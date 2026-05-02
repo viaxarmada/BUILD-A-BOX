@@ -2553,7 +2553,7 @@ body {
   <!-- ======== LEVEL 1: Factory — choose tray ======== -->
   <div class="scene level" id="scene-level1" data-level="1">
     <div class="level-bg"><video class="level-bg-video" muted playsinline preload="auto" poster="assets/scene-factory.jpg"><source src="assets/scene-factory.mp4" type="video/mp4"></video></div>
-    <div class="brand-label seq-pop" data-delay="2" id="lvl1-shelfsmart-toggle" tabindex="0" role="button" aria-pressed="false" aria-label="Show or hide tray descriptions">Shelf<b>Smart</b></div>
+    <div class="brand-label seq-pop" data-delay="2" id="lvl1-shelfsmart-toggle" tabindex="0" role="button" aria-pressed="false" aria-label="Show or hide tray descriptions" data-content="levels.1.shelfsmart_label" data-content-html="1">Shelf<b>Smart</b></div>
     <div class="portal-door seq-down" data-delay="3" id="door1" tabindex="0" role="button" aria-label="Advance to next portal (door)" style="top: calc(4% + 150px); right: 4%; height: 32.2%;">
       <!-- Destination peek FIRST in DOM so it stacks behind the door GLB. The
            bg is a real <img loading="eager"> sibling of the door's <model-viewer>
@@ -2594,24 +2594,24 @@ body {
     <!-- Option tooltips above each tray. Positions tightened + shifted
          left so card 3 clears the yellow door on the right side. -->
     <div class="option-card seq-down" data-delay="5" style="top: calc(18% - 50px); left: 2%;" data-opt="1">
-      <h4><span class="num">1</span>PALLET TRAY</h4>
-      <ul>
+      <h4><span class="num">1</span><span data-content="levels.1.options.0.title">PALLET TRAY</span></h4>
+      <ul data-content="levels.1.options.0.bullets" data-content-list="1">
         <li>Increased product visibility</li>
         <li>Limited communication area</li>
         <li>Requires additional inserts</li>
       </ul>
     </div>
     <div class="option-card seq-down" data-delay="6" style="top: calc(18% - 50px); left: calc(28% - 20px);" data-opt="2">
-      <h4><span class="num">2</span>SINGLE-SIDED TRAY</h4>
-      <ul>
+      <h4><span class="num">2</span><span data-content="levels.1.options.1.title">SINGLE-SIDED TRAY</span></h4>
+      <ul data-content="levels.1.options.1.bullets" data-content-list="1">
         <li>Limited product visibility</li>
         <li>Larger area for printed communication</li>
         <li>No inserts required</li>
       </ul>
     </div>
     <div class="option-card seq-down" data-delay="7" style="top: calc(18% - 50px); left: calc(54% - 40px); max-width: 29%;" data-opt="3">
-      <h4><span class="num">3</span>CORNER POST TRAY</h4>
-      <ul>
+      <h4><span class="num">3</span><span data-content="levels.1.options.2.title">CORNER POST TRAY</span></h4>
+      <ul data-content="levels.1.options.2.bullets" data-content-list="1">
         <li>Good product visibility</li>
         <li>Good printed communication area</li>
         <li>No inserts required</li>
@@ -2676,7 +2676,7 @@ body {
     <!-- Static warehouse bg (no video). The .level-bg rule already paints
          scene-warehouse.jpg via background-image; nothing else needed. -->
     <div class="level-bg"></div>
-    <div class="brand-label tr seq-pop" data-delay="2" id="lvl2-shelfsmart-toggle" tabindex="0" role="button" aria-pressed="false" aria-label="Show or hide paper descriptions">Shelf<b>Smart</b></div>
+    <div class="brand-label tr seq-pop" data-delay="2" id="lvl2-shelfsmart-toggle" tabindex="0" role="button" aria-pressed="false" aria-label="Show or hide paper descriptions" data-content="levels.2.shelfsmart_label" data-content-html="1">Shelf<b>Smart</b></div>
     <div class="portal-door seq-down" data-delay="3" id="door2" tabindex="0" role="button" aria-label="Advance to next portal (door)" style="right: auto; left: 3%; top: auto; bottom: calc(8% + 150px); height: 35.75%; transform: none;">
       <!-- Destination peek FIRST in DOM so it stacks behind the door GLB.
            Mirrors the level-1 setup: scene-store image as the eager-loaded
@@ -2714,16 +2714,16 @@ body {
     </div>
 
     <div class="option-card blue seq-down" data-delay="5" style="top: 16%; left: 24%; max-width: 28%;" data-opt="1">
-      <h4 style="color: #0066CC"><span class="num" style="background:#0066CC; color:#fff;">1</span>KRAFT PAPER</h4>
-      <ul>
+      <h4 style="color: #0066CC"><span class="num" style="background:#0066CC; color:#fff;">1</span><span data-content="levels.2.options.0.title">KRAFT PAPER</span></h4>
+      <ul data-content="levels.2.options.0.bullets" data-content-list="1">
         <li>Most cost-effective option</li>
         <li>Appearance evokes sustainability</li>
         <li>When printed, some colors can become dull / low-contrast</li>
       </ul>
     </div>
     <div class="option-card blue seq-down" data-delay="6" style="top: 16%; right: calc(12% + 130px); max-width: 28%;" data-opt="2">
-      <h4 style="color: #0066CC"><span class="num" style="background:#0066CC; color:#fff;">2</span>WHITE PAPER</h4>
-      <ul>
+      <h4 style="color: #0066CC"><span class="num" style="background:#0066CC; color:#fff;">2</span><span data-content="levels.2.options.1.title">WHITE PAPER</span></h4>
+      <ul data-content="levels.2.options.1.bullets" data-content-list="1">
         <li>Usually requires more investment</li>
         <li>More accurate color tones</li>
         <li>Glossy finish available</li>
@@ -2775,7 +2775,7 @@ body {
   <!-- ======== LEVEL 3: Store — choose communication focus ======== -->
   <div class="scene level" id="scene-level3" data-level="3">
     <div class="level-bg"><video class="level-bg-video" muted playsinline preload="auto" poster="assets/scene-store.jpg"><source src="assets/scene-store.mp4" type="video/mp4"></video></div>
-    <div class="brand-label tr seq-pop" data-delay="2" id="lvl3-shelfsmart-toggle" tabindex="0" role="button" aria-pressed="false" aria-label="Show or hide design descriptions" style="background: #E85FCC; color: #fff;">Shelf<b>Smart</b></div>
+    <div class="brand-label tr seq-pop" data-delay="2" id="lvl3-shelfsmart-toggle" tabindex="0" role="button" aria-pressed="false" aria-label="Show or hide design descriptions" style="background: #E85FCC; color: #fff;" data-content="levels.3.shelfsmart_label" data-content-html="1">Shelf<b>Smart</b></div>
     <div class="portal-door seq-down" data-delay="3" id="door3" tabindex="0" role="button" aria-label="Advance to results (door)">
       <model-viewer
           src="models/Door1.glb"
@@ -2802,22 +2802,22 @@ body {
     <!-- Options list -->
     <div class="level3-options">
       <div class="option-card blue" data-opt="1" tabindex="0" role="button">
-        <h4 style="color: #C13FD9"><span class="num" style="background:#C13FD9; color:#fff;">1</span>BRAND'S LOGO</h4>
-        <ul>
+        <h4 style="color: #C13FD9"><span class="num" style="background:#C13FD9; color:#fff;">1</span><span data-content="levels.3.options.0.title">BRAND'S LOGO</span></h4>
+        <ul data-content="levels.3.options.0.bullets" data-content-list="1">
           <li>Identify products from the same family</li>
           <li>Differentiate brand from competitors</li>
         </ul>
       </div>
       <div class="option-card blue" data-opt="2" tabindex="0" role="button">
-        <h4 style="color: #C13FD9"><span class="num" style="background:#C13FD9; color:#fff;">2</span>PRODUCT'S CHARACTERISTICS</h4>
-        <ul>
+        <h4 style="color: #C13FD9"><span class="num" style="background:#C13FD9; color:#fff;">2</span><span data-content="levels.3.options.1.title">PRODUCT'S CHARACTERISTICS</span></h4>
+        <ul data-content="levels.3.options.1.bullets" data-content-list="1">
           <li>Guide the buyer to what they need</li>
           <li>Good support for new products in the market</li>
         </ul>
       </div>
       <div class="option-card blue" data-opt="3" tabindex="0" role="button">
-        <h4 style="color: #C13FD9"><span class="num" style="background:#C13FD9; color:#fff;">3</span>KEY DIFFERENTIATOR / SLOGAN</h4>
-        <ul>
+        <h4 style="color: #C13FD9"><span class="num" style="background:#C13FD9; color:#fff;">3</span><span data-content="levels.3.options.2.title">KEY DIFFERENTIATOR / SLOGAN</span></h4>
+        <ul data-content="levels.3.options.2.bullets" data-content-list="1">
           <li>Highlight the product's unique feature</li>
           <li>Connect with consumers with brand awareness</li>
         </ul>
@@ -2870,6 +2870,34 @@ body {
 /* ==========================================================================
    BUILD-A-BOX · Game logic
    ========================================================================== */
+
+/* ---------- 0. CONTENT LOADER ----------
+   Reads content.json (managed via /admin.html) and applies it to any DOM
+   element marked with data-content="dot.path". Falls back silently to the
+   hardcoded HTML so the game still works if the JSON is missing or invalid. */
+(function loadContent() {
+  fetch('content.json', { cache: 'no-store' })
+    .then((r) => (r.ok ? r.json() : null))
+    .then((content) => {
+      if (!content) return;
+      document.querySelectorAll('[data-content]').forEach((el) => {
+        const value = el.dataset.content
+          .split('.')
+          .reduce((v, key) => (v == null ? v : v[key]), content);
+        if (value == null) return;
+        if (el.dataset.contentList === '1' && Array.isArray(value)) {
+          el.innerHTML = value
+            .map((item) => `<li>${String(item).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]))}</li>`)
+            .join('');
+        } else if (el.dataset.contentHtml === '1') {
+          el.innerHTML = String(value);
+        } else {
+          el.textContent = String(value);
+        }
+      });
+    })
+    .catch(() => {});
+})();
 
 /* ---------- 1. ASSET PRELOAD ---------- */
 const ASSETS = [

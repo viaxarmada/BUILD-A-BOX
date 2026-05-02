@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Admin · Build-a-Box content</title>
+<style>
+  :root { --cyan: #00C2FF; --ink: #0B1E3A; --bg: #0F2A4F; --panel: #14365E; --warn: #FF6B6B; --ok: #2ECC71; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: #fff; min-height: 100vh; }
+  header { padding: 16px 24px; background: var(--ink); display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+  header h1 { margin: 0; font-size: 18px; letter-spacing: 0.04em; }
+  header .right { display: flex; gap: 12px; align-items: center; }
+  main { max-width: 960px; margin: 0 auto; padding: 24px; }
+  .card { background: var(--panel); border-radius: 10px; padding: 20px; margin-bottom: 16px; }
+  .card h2 { margin: 0 0 12px; font-size: 16px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--cyan); }
+  .field { margin-bottom: 14px; }
+  .field label { display: block; margin-bottom: 4px; font-size: 12px; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.05em; }
+  input[type="text"], input[type="password"], textarea { width: 100%; padding: 10px 12px; background: #0A1F3A; border: 1px solid #2C4A75; border-radius: 6px; color: #fff; font: inherit; font-size: 14px; }
+  textarea { resize: vertical; min-height: 64px; font-family: inherit; }
+  input:focus, textarea:focus { outline: none; border-color: var(--cyan); }
+  button { padding: 10px 18px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; font-size: 14px; }
+  button.primary { background: var(--cyan); color: var(--ink); }
+  button.primary:hover { filter: brightness(1.08); }
+  button.ghost { background: transparent; color: #fff; border: 1px solid #2C4A75; }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  .option-card { background: #0A1F3A; border: 1px solid #2C4A75; border-radius: 8px; padding: 14px; margin-bottom: 12px; }
+  .option-card h3 { margin: 0 0 8px; font-size: 13px; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.05em; }
+  .bullets-row { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; }
+  .bullets-row input { flex: 1; }
+  .bullets-row .del { background: transparent; color: var(--warn); border: 1px solid #2C4A75; padding: 6px 10px; }
+  .add-bullet { background: transparent; color: var(--cyan); border: 1px dashed #2C4A75; padding: 6px 12px; margin-top: 4px; font-size: 12px; }
+  #status { padding: 10px 16px; border-radius: 6px; margin-bottom: 16px; display: none; }
+  #status.ok { background: rgba(46, 204, 113, 0.15); color: var(--ok); display: block; }
+  #status.err { background: rgba(255, 107, 107, 0.15); color: var(--warn); display: block; }
+  #login { max-width: 480px; margin: 64px auto; }
+  #login p { line-height: 1.6; opacity: 0.85; font-size: 14px; }
+  #login a { color: var(--cyan); }
+  code { background: #0A1F3A; padding: 2px 6px; border-radius: 4px; font-size: 12px; }
+  .muted { opacity: 0.65; font-size: 12px; }
+</style>
+</head>
+<body>
+
+<!-- Login screen -->
+<section id="login">
+  <div class="card">
+    <h2>Sign in</h2>
+    <p>Paste a GitHub <strong>fine-grained personal access token</strong>. The admin runs entirely in your browser; the token is kept in <code>localStorage</code> and used only to read/write <code>content.json</code> in this repo.</p>
+    <p>To create one: <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com/settings/personal-access-tokens/new</a> → Resource owner: <code>viaxarmada</code> → Repository access: select only <code>build-a-box</code> → Repository permissions → <strong>Contents: Read and write</strong>. Pick a short expiration (30–90 days).</p>
+    <div class="field">
+      <label for="token">GitHub PAT</label>
+      <input type="password" id="token" placeholder="github_pat_…" autocomplete="off" />
+    </div>
+    <div id="login-err" class="muted" style="color: var(--warn); margin-bottom: 12px;"></div>
+    <button id="login-btn" class="primary">Sign in</button>
+  </div>
+</section>
+
+<!-- Editor -->
+<header id="editor-header" hidden>
+  <h1>Build-a-Box · Content Editor</h1>
+  <div class="right">
+    <span id="who" class="muted"></span>
+    <button id="logout-btn" class="ghost">Sign out</button>
+  </div>
+</header>
+
+<main id="editor" hidden>
+  <div id="status"></div>
+  <div id="form"></div>
+  <div style="display: flex; gap: 12px; margin-top: 8px;">
+    <button id="save-btn" class="primary">Save & deploy</button>
+    <button id="reload-btn" class="ghost">Discard changes</button>
+  </div>
+  <p class="muted" style="margin-top: 16px;">Save commits <code>content.json</code> to the <code>main</code> branch via the GitHub Contents API. GitHub Pages typically rebuilds within ~1 minute. Hard-refresh the live site to see changes.</p>
+</main>
+
+<script>
+/* eslint-disable */
+const REPO = 'viaxarmada/build-a-box';
+const PATH = 'content.json';
+const BRANCH = 'main';
+const TOKEN_KEY = 'bab_admin_token';
+
+const $ = (sel) => document.querySelector(sel);
+const status = (msg, ok) => {
+  const el = $('#status');
+  el.textContent = msg;
+  el.className = ok ? 'ok' : 'err';
+  if (msg) setTimeout(() => { if (el.textContent === msg) el.className = ''; el.textContent = ''; }, ok ? 6000 : 12000);
+};
+
+function getToken() { return localStorage.getItem(TOKEN_KEY) || ''; }
+function setToken(t) { if (t) localStorage.setItem(TOKEN_KEY, t); else localStorage.removeItem(TOKEN_KEY); }
+
+async function gh(method, url, body) {
+  const opts = {
+    method,
+    headers: {
+      Accept: 'application/vnd.github+json',
+      Authorization: 'Bearer ' + getToken(),
+      'X-GitHub-Api-Version': '2022-11-28',
+    },
+  };
+  if (body) {
+    opts.headers['Content-Type'] = 'application/json';
+    opts.body = JSON.stringify(body);
+  }
+  const r = await fetch('https://api.github.com' + url, opts);
+  const json = r.headers.get('content-type')?.includes('json') ? await r.json() : null;
+  if (!r.ok) throw new Error((json && json.message) || ('HTTP ' + r.status));
+  return json;
+}
+
+async function login() {
+  const t = $('#token').value.trim();
+  if (!t) return;
+  setToken(t);
+  $('#login-err').textContent = '';
+  try {
+    const me = await gh('GET', '/user');
+    // Verify the token can actually read this repo (catches permission scoping issues early).
+    await gh('GET', `/repos/${REPO}/contents/${PATH}?ref=${BRANCH}`);
+    $('#who').textContent = '@' + me.login;
+    showEditor();
+  } catch (e) {
+    setToken('');
+    $('#login-err').textContent = 'Sign in failed: ' + e.message;
+  }
+}
+
+function logout() { setToken(''); location.reload(); }
+
+let currentSha = null;
+let currentContent = null;
+
+async function showEditor() {
+  $('#login').hidden = true;
+  $('#editor-header').hidden = false;
+  $('#editor').hidden = false;
+  await loadFile();
+}
+
+async function loadFile() {
+  status('Loading content…', true);
+  try {
+    const file = await gh('GET', `/repos/${REPO}/contents/${PATH}?ref=${BRANCH}&_=${Date.now()}`);
+    currentSha = file.sha;
+    // file.content is base64 with embedded newlines.
+    const b64 = file.content.replace(/\n/g, '');
+    const decoded = decodeURIComponent(escape(atob(b64)));
+    currentContent = JSON.parse(decoded);
+    renderForm();
+    status('', true);
+  } catch (e) {
+    status('Failed to load content.json: ' + e.message, false);
+  }
+}
+
+function renderForm() {
+  const form = $('#form');
+  form.innerHTML = '';
+  const levels = currentContent.levels || {};
+  ['1', '2', '3'].forEach((lvlId) => {
+    const lvl = levels[lvlId];
+    if (!lvl) return;
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `<h2>Level ${lvlId}</h2>`;
+
+    // ShelfSmart label (HTML allowed).
+    const labelField = document.createElement('div');
+    labelField.className = 'field';
+    labelField.innerHTML = `
+      <label>ShelfSmart pill label <span class="muted">(HTML allowed: e.g. <code>Shelf&lt;b&gt;Smart&lt;/b&gt;</code>)</span></label>
+      <input type="text" data-bind="levels.${lvlId}.shelfsmart_label" />
+    `;
+    labelField.querySelector('input').value = lvl.shelfsmart_label || '';
+    card.appendChild(labelField);
+
+    // Options.
+    (lvl.options || []).forEach((opt, i) => {
+      const optEl = document.createElement('div');
+      optEl.className = 'option-card';
+      optEl.innerHTML = `
+        <h3>Option ${i + 1}</h3>
+        <div class="field">
+          <label>Title</label>
+          <input type="text" data-bind="levels.${lvlId}.options.${i}.title" />
+        </div>
+        <div class="field">
+          <label>Bullets</label>
+          <div class="bullets" data-bullets="levels.${lvlId}.options.${i}.bullets"></div>
+          <button class="add-bullet" type="button">+ Add bullet</button>
+        </div>
+      `;
+      optEl.querySelector('input[data-bind*="title"]').value = opt.title || '';
+      const bulletsEl = optEl.querySelector('.bullets');
+      (opt.bullets || []).forEach((b, j) => bulletsEl.appendChild(makeBulletRow(b)));
+      optEl.querySelector('.add-bullet').addEventListener('click', () => {
+        bulletsEl.appendChild(makeBulletRow(''));
+      });
+      card.appendChild(optEl);
+    });
+
+    form.appendChild(card);
+  });
+}
+
+function makeBulletRow(value) {
+  const row = document.createElement('div');
+  row.className = 'bullets-row';
+  row.innerHTML = `<input type="text" /><button type="button" class="del">×</button>`;
+  row.querySelector('input').value = value;
+  row.querySelector('.del').addEventListener('click', () => row.remove());
+  return row;
+}
+
+function collectFromForm() {
+  const next = JSON.parse(JSON.stringify(currentContent));
+  document.querySelectorAll('[data-bind]').forEach((input) => {
+    const path = input.dataset.bind.split('.');
+    let obj = next;
+    for (let i = 0; i < path.length - 1; i++) {
+      obj = obj[path[i]] = obj[path[i]] ?? {};
+    }
+    obj[path[path.length - 1]] = input.value;
+  });
+  document.querySelectorAll('[data-bullets]').forEach((wrap) => {
+    const path = wrap.dataset.bullets.split('.');
+    const items = Array.from(wrap.querySelectorAll('input')).map((i) => i.value).filter((v) => v.trim().length > 0);
+    let obj = next;
+    for (let i = 0; i < path.length - 1; i++) {
+      obj = obj[path[i]] = obj[path[i]] ?? {};
+    }
+    obj[path[path.length - 1]] = items;
+  });
+  return next;
+}
+
+async function save() {
+  const next = collectFromForm();
+  const text = JSON.stringify(next, null, 2) + '\n';
+  // base64 encode (handles unicode via the standard escape/unescape trick).
+  const b64 = btoa(unescape(encodeURIComponent(text)));
+  $('#save-btn').disabled = true;
+  status('Saving…', true);
+  try {
+    const res = await gh('PUT', `/repos/${REPO}/contents/${PATH}`, {
+      message: 'admin: update content.json',
+      content: b64,
+      sha: currentSha,
+      branch: BRANCH,
+    });
+    currentSha = res.content.sha;
+    currentContent = next;
+    status('Saved. Pages will rebuild in ~1 minute.', true);
+  } catch (e) {
+    status('Save failed: ' + e.message, false);
+  } finally {
+    $('#save-btn').disabled = false;
+  }
+}
+
+$('#login-btn').addEventListener('click', login);
+$('#token').addEventListener('keydown', (e) => { if (e.key === 'Enter') login(); });
+$('#logout-btn').addEventListener('click', logout);
+$('#save-btn').addEventListener('click', save);
+$('#reload-btn').addEventListener('click', loadFile);
+
+// Auto-restore session.
+if (getToken()) {
+  $('#token').value = getToken();
+  login();
+}
+</script>
+
+</body>
+</html>
