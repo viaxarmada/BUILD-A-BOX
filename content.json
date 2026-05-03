@@ -1,0 +1,80 @@
+{
+  "levels": {
+    "1": {
+      "shelfsmart_label": "Shelf<b>Smart</b>",
+      "options": [
+        {
+          "title": "PALLET TRAY",
+          "bullets": [
+            "Increased product visibility",
+            "Limited communication area",
+            "Requires additional inserts"
+          ]
+        },
+        {
+          "title": "SINGLE-SIDED TRAY",
+          "bullets": [
+            "Limited product visibility",
+            "Larger area for printed communication",
+            "No inserts required"
+          ]
+        },
+        {
+          "title": "CORNER POST TRAY",
+          "bullets": [
+            "Good product visibility",
+            "Good printed communication area",
+            "No inserts required"
+          ]
+        }
+      ]
+    },
+    "2": {
+      "shelfsmart_label": "Shelf<b>Smart</b>",
+      "options": [
+        {
+          "title": "KRAFT PAPER",
+          "bullets": [
+            "Most cost-effective option",
+            "Appearance evokes sustainability",
+            "When printed, some colors can become dull / low-contrast"
+          ]
+        },
+        {
+          "title": "WHITE PAPER",
+          "bullets": [
+            "Usually requires more investment",
+            "More accurate color tones",
+            "Glossy finish available"
+          ]
+        }
+      ]
+    },
+    "3": {
+      "shelfsmart_label": "Shelf<b>Smart</b>",
+      "options": [
+        {
+          "title": "BRAND'S LOGO",
+          "bullets": [
+            "Identify products from the same family",
+            "Differentiate brand from competitors"
+          ]
+        },
+        {
+          "title": "PRODUCT'S CHARACTERISTICS",
+          "bullets": [
+            "Guide the buyer to what they need",
+            "Good support for new products in the market"
+          ]
+        },
+        {
+          "title": "KEY DIFFERENTIATOR / SLOGAN",
+          "bullets": [
+            "Highlight the product's unique feature",
+            "Connect with consumers with brand awareness"
+          ]
+        }
+      ]
+    }
+  }
+}
