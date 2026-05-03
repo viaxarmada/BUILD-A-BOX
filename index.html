@@ -2347,9 +2347,9 @@ body {
 <!-- Rotate-to-landscape overlay (only shows on portrait phones) -->
 <div id="rotate-overlay" role="dialog" aria-labelledby="rotate-title">
   <div class="rotate-icon" aria-hidden="true">📱</div>
-  <h2 id="rotate-title">Please rotate your device</h2>
-  <p>BUILD-A-BOX is designed for landscape. Rotate your phone or tablet sideways for the best experience.</p>
-  <button id="rotate-continue" type="button">Continue anyway</button>
+  <h2 id="rotate-title" data-content="rotate.title">Please rotate your device</h2>
+  <p data-content="rotate.body">BUILD-A-BOX is designed for landscape. Rotate your phone or tablet sideways for the best experience.</p>
+  <button id="rotate-continue" type="button" data-content="rotate.continue_button">Continue anyway</button>
 </div>
 
 <div id="stage-wrapper">
@@ -2377,26 +2377,26 @@ body {
       <h1>BUILD-A-BOX</h1>
     </div>
     <div class="title-byline">
-      <span>An experience created by</span>
+      <span data-content="title.byline">An experience created by</span>
       <img src="assets/logo-ignite.png" alt="Smurfit Westrock" />
     </div>
     <button class="play-button" id="start-game" aria-label="Start game">
       <div class="play-icon">
         <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
       </div>
-      <div class="play-label">START GAME</div>
+      <div class="play-label" data-content="title.play_label">START GAME</div>
     </button>
     <div class="kb-hint"><kbd>Enter</kbd> Start &nbsp; · &nbsp; <kbd>M</kbd> Mute</div>
   </div>
 
   <!-- ======== SCENE: CONGRATS ======== -->
   <div class="scene" id="scene-congrats">
-    <div class="header-pill seq-pill">LOADING <span class="dots">· · · ·</span></div>
+    <div class="header-pill seq-pill"><span data-content="congrats.loading_pill">LOADING</span> <span class="dots">· · · ·</span></div>
     <div class="scene-body">
-      <h2 class="seq-up" data-delay="2">CONGRATULATIONS!</h2>
-      <p class="lede seq-up" data-delay="4">YOU ARE IN CHARGE OF DESIGNING PACKAGING SOLUTIONS<br>FOR SMURFIT WESTROCK CUSTOMERS.</p>
-      <p class="seq-up" data-delay="6">SELECT THE DESIGN FEATURES THAT BEST FULFILL THE ASSIGNED MISSION<br>AND CREATE THE IDEAL SOLUTION TO STAND OUT AT THE POINT OF SALE.</p>
-      <button class="arrow-btn advance seq-pop" data-delay="8" aria-label="Next">NEXT</button>
+      <h2 class="seq-up" data-delay="2" data-content="congrats.heading">CONGRATULATIONS!</h2>
+      <p class="lede seq-up" data-delay="4" data-content="congrats.lede_html" data-content-html="1">YOU ARE IN CHARGE OF DESIGNING PACKAGING SOLUTIONS<br>FOR SMURFIT WESTROCK CUSTOMERS.</p>
+      <p class="seq-up" data-delay="6" data-content="congrats.body_html" data-content-html="1">SELECT THE DESIGN FEATURES THAT BEST FULFILL THE ASSIGNED MISSION<br>AND CREATE THE IDEAL SOLUTION TO STAND OUT AT THE POINT OF SALE.</p>
+      <button class="arrow-btn advance seq-pop" data-delay="8" aria-label="Next" data-content="congrats.next_button">NEXT</button>
     </div>
     <img class="ignite-mark" src="assets/logo-ignite.png" alt="" />
     <div class="kb-hint"><kbd>Enter</kbd> Continue &nbsp; · &nbsp; <kbd>Backspace</kbd> Back</div>
@@ -2404,18 +2404,18 @@ body {
 
   <!-- ======== SCENE: RULES ======== -->
   <div class="scene" id="scene-rules">
-    <div class="header-pill seq-pill">LOADING <span class="dots">· · · ·</span></div>
+    <div class="header-pill seq-pill"><span data-content="rules.loading_pill">LOADING</span> <span class="dots">· · · ·</span></div>
     <div class="scene-body rules-layout">
       <div class="rules-text">
-        <p class="line seq-fade" data-delay="3">Travel through 3 portals to choose the<br>features of your packaging design.</p>
-        <p class="line seq-fade" data-delay="6">When you make your choice, the door will light up red — click it to advance.</p>
+        <p class="line seq-fade" data-delay="3" data-content="rules.line1_html" data-content-html="1">Travel through 3 portals to choose the<br>features of your packaging design.</p>
+        <p class="line seq-fade" data-delay="6" data-content="rules.line2_html" data-content-html="1">When you make your choice, the door will light up red — click it to advance.</p>
       </div>
       <button class="rules-door-btn advance" id="rules-door-btn" aria-label="Enter next scene">
         <div class="door-frame">
           <img src="assets/image5.png" alt="Red portal door" class="rules-door-img" />
           <div class="door-light-overlay"></div>
         </div>
-        <span class="rules-door-caption">CLICK TO ENTER</span>
+        <span class="rules-door-caption" data-content="rules.click_to_enter">CLICK TO ENTER</span>
       </button>
     </div>
     <img class="ignite-mark" src="assets/logo-ignite.png" alt="" />
@@ -2424,13 +2424,13 @@ body {
 
   <!-- ======== SCENE: MISSION ======== -->
   <div class="scene" id="scene-mission">
-    <div class="header-pill seq-pill">MISSION <span class="dots">· · · ·</span></div>
+    <div class="header-pill seq-pill"><span data-content="mission.loading_pill">MISSION</span> <span class="dots">· · · ·</span></div>
     <div class="scene-body mission-layout">
       <div class="mission-text">
-        <p class="line seq-fade" data-delay="3">In <b>BUILD-A-BOX</b>, you are responsible for designing packaging solutions for Smurfit Westrock customers.</p>
-        <p class="line seq-fade" data-delay="5">Select the design features that best meet the assigned mission and create the ideal solution to stand out at the point of sale.</p>
+        <p class="line seq-fade" data-delay="3" data-content="mission.intro_html" data-content-html="1">In <b>BUILD-A-BOX</b>, you are responsible for designing packaging solutions for Smurfit Westrock customers.</p>
+        <p class="line seq-fade" data-delay="5" data-content="mission.body_html" data-content-html="1">Select the design features that best meet the assigned mission and create the ideal solution to stand out at the point of sale.</p>
       </div>
-      <button class="arrow-btn advance seq-pop" data-delay="8" aria-label="Continue to mission">START MISSION</button>
+      <button class="arrow-btn advance seq-pop" data-delay="8" aria-label="Continue to mission" data-content="mission.start_button">START MISSION</button>
     </div>
     <img class="ignite-mark" src="assets/logo-ignite.png" alt="" />
     <div class="kb-hint"><kbd>Enter</kbd> Continue &nbsp; · &nbsp; <kbd>Backspace</kbd> Back</div>
@@ -2438,7 +2438,7 @@ body {
 
   <!-- ======== SCENE: CLIENT ======== -->
   <div class="scene scene-client" id="scene-client">
-    <div class="header-pill seq-pill">LOADING <span class="dots">· · · ·</span></div>
+    <div class="header-pill seq-pill"><span data-content="client.loading_pill">LOADING</span> <span class="dots">· · · ·</span></div>
     <model-viewer
         class="client-bag seq-left"
         data-delay="2"
@@ -2455,15 +2455,15 @@ body {
         poster="assets/bag-monster.png"
         reveal="auto"></model-viewer>
     <div class="client-card seq-down" data-delay="3">
-      <h3>Client: <img src="assets/logo-monster.png" class="brand-logo" alt="Monster Snacks" /></h3>
-      <div class="client-stars">★ ★ ★ ★ ☆</div>
-      <p>Monster Snacks is a <span class="hl">recognized brand</span> in the market.<br>
+      <h3><span data-content="client.client_label">Client:</span> <img src="assets/logo-monster.png" class="brand-logo" alt="Monster Snacks" /></h3>
+      <div class="client-stars" data-content="client.stars">★ ★ ★ ★ ☆</div>
+      <p data-content="client.intro_html" data-content-html="1">Monster Snacks is a <span class="hl">recognized brand</span> in the market.<br>
          Currently have <span class="hl">no presence</span> in club stores.</p>
-      <ul>
+      <ul data-content="client.objectives_html" data-content-list="1" data-content-html="1">
         <li>Position their flagship snack <b>(Cheese Flavor)</b> in warehouse club stores.</li>
         <li>Need packaging that helps identify the product at the point of sale and adapts to the store format.</li>
       </ul>
-      <button class="arrow-btn pink advance seq-pop" data-delay="8" style="margin-top: 14px;" aria-label="Next">NEXT</button>
+      <button class="arrow-btn pink advance seq-pop" data-delay="8" style="margin-top: 14px;" aria-label="Next" data-content="client.next_button">NEXT</button>
     </div>
     <img class="ignite-mark" src="assets/logo-ignite.png" alt="" />
     <div class="kb-hint"><kbd>Enter</kbd> Continue &nbsp; · &nbsp; <kbd>Backspace</kbd> Back</div>
@@ -2472,12 +2472,12 @@ body {
   <!-- ======== SCENE: LET'S CREATE ======== -->
   <div class="scene scene-create" id="scene-create">
     <div class="header-pill seq-pill">
-      <span class="icon">🛒</span> LOADING <span class="dots">· · · ·</span>
+      <span class="icon">🛒</span> <span data-content="create.loading_pill">LOADING</span> <span class="dots">· · · ·</span>
     </div>
     <div class="create-text">
-      <div class="line1 seq-up" data-delay="6">HELP <span class="highlight-b">MONSTER SNACKS</span><br>TO HAVE A GREAT DEBUT.</div>
-      <div class="line2 seq-pop" data-delay="8">LET'S CREATE!</div>
-      <button class="start-btn advance seq-pop" data-delay="10" id="btn-lets-start" aria-label="Start designing">START</button>
+      <div class="line1 seq-up" data-delay="6" data-content="create.line1_html" data-content-html="1">HELP <span class="highlight-b">MONSTER SNACKS</span><br>TO HAVE A GREAT DEBUT.</div>
+      <div class="line2 seq-pop" data-delay="8" data-content="create.line2">LET'S CREATE!</div>
+      <button class="start-btn advance seq-pop" data-delay="10" id="btn-lets-start" aria-label="Start designing" data-content="create.start_button">START</button>
     </div>
     <div class="pedestal-stack">
       <img class="pedestal" src="assets/pedestal.png" alt="Pedestal" />
@@ -2885,11 +2885,11 @@ body {
 
   <!-- ======== FINALE ======== -->
   <div class="scene finale" id="scene-finale">
-    <h1>DESIGN COMPLETE!</h1>
-    <div class="rank" id="finale-rank">PACKAGING DESIGNER</div>
+    <h1 data-content="finale.heading">DESIGN COMPLETE!</h1>
+    <div class="rank" id="finale-rank" data-content="finale.default_rank">PACKAGING DESIGNER</div>
     <div class="score-big"><span id="finale-score">0</span><span class="score-max"> / 9</span></div>
     <div class="finale-actions">
-      <button class="start-btn" id="btn-replay">PLAY AGAIN</button>
+      <button class="start-btn" id="btn-replay" data-content="finale.play_again_button">PLAY AGAIN</button>
     </div>
     <img class="ignite-mark" src="assets/logo-ignite.png" alt="" />
   </div>
@@ -2905,30 +2905,45 @@ body {
 /* ---------- 0. CONTENT LOADER ----------
    Reads content.json (managed via /admin.html) and applies it to any DOM
    element marked with data-content="dot.path". Falls back silently to the
-   hardcoded HTML so the game still works if the JSON is missing or invalid. */
-(function loadContent() {
+   hardcoded HTML so the game still works if the JSON is missing or invalid.
+
+   Element attributes:
+     data-content="dot.path"           — required
+     data-content-html="1"             — render value as innerHTML (else textContent)
+     data-content-list="1"             — value is an array; wrap each item in <li>
+                                         (combined with data-content-html="1" the
+                                         items render as HTML; otherwise escaped)
+
+   Loaded content is also exposed on window.__content__ so JS-driven strings
+   (e.g. the finale rank tier names) can read it after the fetch resolves. */
+window.__content__ = null;
+window.__contentLoaded = new Promise((resolve) => {
   fetch('content.json', { cache: 'no-store' })
     .then((r) => (r.ok ? r.json() : null))
     .then((content) => {
-      if (!content) return;
+      if (!content) { resolve(null); return; }
+      window.__content__ = content;
+      const escape = (s) => String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
       document.querySelectorAll('[data-content]').forEach((el) => {
         const value = el.dataset.content
           .split('.')
           .reduce((v, key) => (v == null ? v : v[key]), content);
         if (value == null) return;
+        const isHtml = el.dataset.contentHtml === '1';
         if (el.dataset.contentList === '1' && Array.isArray(value)) {
           el.innerHTML = value
-            .map((item) => `<li>${String(item).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]))}</li>`)
+            .map((item) => `<li>${isHtml ? String(item) : escape(item)}</li>`)
             .join('');
-        } else if (el.dataset.contentHtml === '1') {
+        } else if (isHtml) {
           el.innerHTML = String(value);
         } else {
           el.textContent = String(value);
         }
       });
+      resolve(content);
     })
-    .catch(() => {});
-})();
+    .catch(() => resolve(null));
+});
 
 /* ---------- 1. ASSET PRELOAD ---------- */
 const ASSETS = [
@@ -4208,11 +4223,14 @@ function renderFinale() {
     }, stepDur);
   }
 
-  // Rank based on total
-  let rank = 'KEEP EXPLORING';
-  if (state.score >= 8) rank = '🏆 MASTER PACKAGING DESIGNER';
-  else if (state.score >= 6) rank = '⭐ SKILLED DESIGNER';
-  else if (state.score >= 4) rank = '✨ EMERGING DESIGNER';
+  // Rank based on total. Tier strings are editable via content.json
+  // (finale.ranks.{default,tier_4,tier_6,tier_8}); fall back to hardcoded
+  // values if content hasn't loaded or is missing keys.
+  const ranks = (window.__content__ && window.__content__.finale && window.__content__.finale.ranks) || {};
+  let rank = ranks.default || 'KEEP EXPLORING';
+  if (state.score >= 8) rank = ranks.tier_8 || '🏆 MASTER PACKAGING DESIGNER';
+  else if (state.score >= 6) rank = ranks.tier_6 || '⭐ SKILLED DESIGNER';
+  else if (state.score >= 4) rank = ranks.tier_4 || '✨ EMERGING DESIGNER';
   document.getElementById('finale-rank').textContent = rank;
 }
 
