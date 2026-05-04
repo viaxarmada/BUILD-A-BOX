@@ -1081,17 +1081,18 @@ body {
    jumps up dramatically from its down position, rotates, and settles
    visibly raised above the floor. The universal .option-faded pass
    fades the other roll + descriptions in parallel. */
-/* On commit (second click), the picked roll smoothly rises 20% of
-   stage height (180px on the 900-stage) above its down position and
-   stays there. The universal .option-faded pass fades the other roll
-   + descriptions in parallel. */
+/* On commit (second click), the picked roll briefly bounces up ~20% of
+   stage height above its down position and quickly drops back down to
+   the floor. The universal .option-faded pass fades the other roll +
+   descriptions in parallel. */
 @keyframes rollPickRise {
   /* Include opacity:1 in every keyframe — without it, this animation
      replaces rollDropToFloor (which DID animate opacity 1 → 1) and the
      picked roll's opacity would fall back to the base .roll-slot
      opacity:0, making the committed roll invisible inside its cyan ring. */
   0%   { opacity: 1; transform: translate(0, 500px) scale(1, 2); }
-  100% { opacity: 1; transform: translate(0, 320px) scale(1, 2); }
+  35%  { opacity: 1; transform: translate(0, 320px) scale(1, 2); }
+  100% { opacity: 1; transform: translate(0, 500px) scale(1, 2); }
 }
 #scene-level2.active .roll-slot[data-opt].roll-down.roll-picked {
   animation: rollPickRise 0.6s cubic-bezier(0.4, 0, 0.6, 1) forwards;
@@ -1155,15 +1156,21 @@ body {
   100% { opacity: 1; }
 }
 /* Once the user commits a design (.bg-blackout is set on the scene at
-   that moment), fade the white mockup panel out alongside the backdrop
-   blackout so the stage is fully cleared before the final door rises.
-   Matches the 4s bg-fade-to-black timing. */
+   that moment), dissolve the white mockup panel — but only its painted
+   background + drop-shadow, NOT its opacity. Keeping opacity at 1 means
+   the picked graphic logo (a child .commslot.active) stays visible
+   during the 4s blackout transition while the white panel itself
+   visually disappears. The panel container will be hidden behind the
+   final door anyway once the door rises. */
 #scene-level3.bg-blackout .mockup {
-  animation: mockupFadeOut 4s ease forwards;
+  animation: mockupPanelDissolve 4s ease forwards;
 }
-@keyframes mockupFadeOut {
-  0%   { opacity: 1; }
-  100% { opacity: 0; }
+@keyframes mockupPanelDissolve {
+  /* opacity:1 in every keyframe so this animation, which replaces the
+     prior mockupFade, doesn't drop back to the base .mockup opacity:0
+     and take the picked-graphic child with it. */
+  0%   { opacity: 1; background: #fff; box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
+  100% { opacity: 1; background: rgba(255, 255, 255, 0); box-shadow: 0 20px 40px rgba(0,0,0,0); }
 }
 .mockup .commslot {
   width: 70%;
