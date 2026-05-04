@@ -158,18 +158,159 @@ async function loadFile() {
   }
 }
 
+/* Schema describes which sections of content.json are exposed to the
+   admin form, in render order. Each entry is { title, fields[], lists[] }.
+   - fields:  { path, label, type: 'text' | 'textarea', hint? }
+   - lists:   { path, label, html? }   — array of strings, HTML allowed if html=true
+   To make a new key editable: add it to content.json + add a row here. */
+const SCHEMA = [
+  {
+    title: 'Rotate-screen prompt (mobile portrait)',
+    fields: [
+      { path: 'rotate.title', label: 'Title' },
+      { path: 'rotate.body', label: 'Body', type: 'textarea' },
+      { path: 'rotate.continue_button', label: 'Continue button' },
+    ],
+  },
+  {
+    title: 'Title screen',
+    fields: [
+      { path: 'title.byline', label: 'Byline' },
+      { path: 'title.play_label', label: 'Play button label' },
+    ],
+  },
+  {
+    title: 'Congrats screen',
+    fields: [
+      { path: 'congrats.loading_pill', label: 'Header pill text' },
+      { path: 'congrats.heading', label: 'Heading' },
+      { path: 'congrats.lede_html', label: 'Lede paragraph', type: 'textarea', hint: 'HTML allowed (use <br> for line breaks)' },
+      { path: 'congrats.body_html', label: 'Body paragraph', type: 'textarea', hint: 'HTML allowed' },
+      { path: 'congrats.next_button', label: 'Next button' },
+    ],
+  },
+  {
+    title: 'Rules screen',
+    fields: [
+      { path: 'rules.loading_pill', label: 'Header pill text' },
+      { path: 'rules.line1_html', label: 'First line', type: 'textarea', hint: 'HTML allowed' },
+      { path: 'rules.line2_html', label: 'Second line', type: 'textarea', hint: 'HTML allowed' },
+      { path: 'rules.click_to_enter', label: 'Door caption' },
+    ],
+  },
+  {
+    title: 'Mission screen',
+    fields: [
+      { path: 'mission.loading_pill', label: 'Header pill text' },
+      { path: 'mission.intro_html', label: 'Intro paragraph', type: 'textarea', hint: 'HTML allowed' },
+      { path: 'mission.body_html', label: 'Body paragraph', type: 'textarea', hint: 'HTML allowed' },
+      { path: 'mission.start_button', label: 'Start button' },
+    ],
+  },
+  {
+    title: 'Client screen',
+    fields: [
+      { path: 'client.loading_pill', label: 'Header pill text' },
+      { path: 'client.client_label', label: 'Client label (before logo)' },
+      { path: 'client.stars', label: 'Star rating display' },
+      { path: 'client.intro_html', label: 'Intro paragraph', type: 'textarea', hint: 'HTML allowed' },
+      { path: 'client.next_button', label: 'Next button' },
+    ],
+    lists: [
+      { path: 'client.objectives_html', label: 'Objectives bullets', html: true },
+    ],
+  },
+  {
+    title: 'Create / Let’s create screen',
+    fields: [
+      { path: 'create.loading_pill', label: 'Header pill text' },
+      { path: 'create.line1_html', label: 'First line', type: 'textarea', hint: 'HTML allowed' },
+      { path: 'create.line2', label: 'Second line' },
+      { path: 'create.start_button', label: 'Start button' },
+    ],
+  },
+  {
+    title: 'Finale screen',
+    fields: [
+      { path: 'finale.heading', label: 'Heading' },
+      { path: 'finale.default_rank', label: 'Default rank label' },
+      { path: 'finale.play_again_button', label: 'Play again button' },
+      { path: 'finale.ranks.default', label: 'Rank — score 0–3' },
+      { path: 'finale.ranks.tier_4', label: 'Rank — score 4–5' },
+      { path: 'finale.ranks.tier_6', label: 'Rank — score 6–7' },
+      { path: 'finale.ranks.tier_8', label: 'Rank — score 8–9' },
+    ],
+  },
+];
+
+function getByPath(obj, path) {
+  return path.split('.').reduce((v, key) => (v == null ? v : v[key]), obj);
+}
+function setByPath(obj, path, value) {
+  const parts = path.split('.');
+  let cur = obj;
+  for (let i = 0; i < parts.length - 1; i++) {
+    cur = cur[parts[i]] = cur[parts[i]] ?? {};
+  }
+  cur[parts[parts.length - 1]] = value;
+}
+
 function renderForm() {
   const form = $('#form');
   form.innerHTML = '';
+
+  // Schema-driven sections.
+  SCHEMA.forEach((section) => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    const titleEl = document.createElement('h2');
+    titleEl.textContent = section.title;
+    card.appendChild(titleEl);
+
+    (section.fields || []).forEach((field) => {
+      const wrap = document.createElement('div');
+      wrap.className = 'field';
+      const value = getByPath(currentContent, field.path) ?? '';
+      const tag = field.type === 'textarea' ? 'textarea' : 'input';
+      const attrs = field.type === 'textarea' ? '' : 'type="text"';
+      wrap.innerHTML = `
+        <label>${field.label}${field.hint ? ` <span class="muted">(${field.hint})</span>` : ''}</label>
+        <${tag} ${attrs} data-bind="${field.path}"></${tag}>
+      `;
+      wrap.querySelector('[data-bind]').value = value;
+      card.appendChild(wrap);
+    });
+
+    (section.lists || []).forEach((list) => {
+      const wrap = document.createElement('div');
+      wrap.className = 'field';
+      wrap.innerHTML = `
+        <label>${list.label}${list.html ? ' <span class="muted">(HTML allowed in each item)</span>' : ''}</label>
+        <div class="bullets" data-bullets="${list.path}"></div>
+        <button class="add-bullet" type="button">+ Add item</button>
+      `;
+      const bulletsEl = wrap.querySelector('.bullets');
+      const items = getByPath(currentContent, list.path) || [];
+      items.forEach((b) => bulletsEl.appendChild(makeBulletRow(b)));
+      wrap.querySelector('.add-bullet').addEventListener('click', () => {
+        bulletsEl.appendChild(makeBulletRow(''));
+      });
+      card.appendChild(wrap);
+    });
+
+    form.appendChild(card);
+  });
+
+  // Levels (kept hand-rendered because each option also has a bullets list,
+  // i.e. nested arrays — easier to read this way than to extend SCHEMA).
   const levels = currentContent.levels || {};
   ['1', '2', '3'].forEach((lvlId) => {
     const lvl = levels[lvlId];
     if (!lvl) return;
     const card = document.createElement('div');
     card.className = 'card';
-    card.innerHTML = `<h2>Level ${lvlId}</h2>`;
+    card.innerHTML = `<h2>Level ${lvlId} — description cards</h2>`;
 
-    // ShelfSmart label (HTML allowed).
     const labelField = document.createElement('div');
     labelField.className = 'field';
     labelField.innerHTML = `
@@ -179,7 +320,6 @@ function renderForm() {
     labelField.querySelector('input').value = lvl.shelfsmart_label || '';
     card.appendChild(labelField);
 
-    // Options.
     (lvl.options || []).forEach((opt, i) => {
       const optEl = document.createElement('div');
       optEl.className = 'option-card';
@@ -197,7 +337,7 @@ function renderForm() {
       `;
       optEl.querySelector('input[data-bind*="title"]').value = opt.title || '';
       const bulletsEl = optEl.querySelector('.bullets');
-      (opt.bullets || []).forEach((b, j) => bulletsEl.appendChild(makeBulletRow(b)));
+      (opt.bullets || []).forEach((b) => bulletsEl.appendChild(makeBulletRow(b)));
       optEl.querySelector('.add-bullet').addEventListener('click', () => {
         bulletsEl.appendChild(makeBulletRow(''));
       });

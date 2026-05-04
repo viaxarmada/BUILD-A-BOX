@@ -1,4 +1,60 @@
 {
+  "rotate": {
+    "title": "Please rotate your device",
+    "body": "BUILD-A-BOX is designed for landscape. Rotate your phone or tablet sideways for the best experience.",
+    "continue_button": "Continue anyway"
+  },
+  "title": {
+    "byline": "An experience created by",
+    "play_label": "START GAME"
+  },
+  "congrats": {
+    "loading_pill": "LOADING",
+    "heading": "CONGRATULATIONS!",
+    "lede_html": "YOU ARE IN CHARGE OF DESIGNING PACKAGING SOLUTIONS<br>FOR SMURFIT WESTROCK CUSTOMERS.",
+    "body_html": "SELECT THE DESIGN FEATURES THAT BEST FULFILL THE ASSIGNED MISSION<br>AND CREATE THE IDEAL SOLUTION TO STAND OUT AT THE POINT OF SALE.",
+    "next_button": "NEXT"
+  },
+  "rules": {
+    "loading_pill": "LOADING",
+    "line1_html": "Travel through 3 portals to choose the<br>features of your packaging design.",
+    "line2_html": "When you make your choice, the door will light up red — click it to advance.",
+    "click_to_enter": "CLICK TO ENTER"
+  },
+  "mission": {
+    "loading_pill": "MISSION",
+    "intro_html": "In <b>BUILD-A-BOX</b>, you are responsible for designing packaging solutions for Smurfit Westrock customers.",
+    "body_html": "Select the design features that best meet the assigned mission and create the ideal solution to stand out at the point of sale.",
+    "start_button": "START MISSION"
+  },
+  "client": {
+    "loading_pill": "LOADING",
+    "client_label": "Client:",
+    "stars": "★ ★ ★ ★ ☆",
+    "intro_html": "Monster Snacks is a <span class=\"hl\">recognized brand</span> in the market.<br>Currently have <span class=\"hl\">no presence</span> in club stores.",
+    "objectives_html": [
+      "Position their flagship snack <b>(Cheese Flavor)</b> in warehouse club stores.",
+      "Need packaging that helps identify the product at the point of sale and adapts to the store format."
+    ],
+    "next_button": "NEXT"
+  },
+  "create": {
+    "loading_pill": "LOADING",
+    "line1_html": "HELP <span class=\"highlight-b\">MONSTER SNACKS</span><br>TO HAVE A GREAT DEBUT.",
+    "line2": "LET'S CREATE!",
+    "start_button": "START"
+  },
+  "finale": {
+    "heading": "DESIGN COMPLETE!",
+    "default_rank": "PACKAGING DESIGNER",
+    "play_again_button": "PLAY AGAIN",
+    "ranks": {
+      "default": "KEEP EXPLORING",
+      "tier_4": "✨ EMERGING DESIGNER",
+      "tier_6": "⭐ SKILLED DESIGNER",
+      "tier_8": "🏆 MASTER PACKAGING DESIGNER"
+    }
+  },
   "levels": {
     "1": {
       "shelfsmart_label": "Shelf<b>Smart</b>",
