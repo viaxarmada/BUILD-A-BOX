@@ -1154,6 +1154,17 @@ body {
   0%   { opacity: 0; }
   100% { opacity: 1; }
 }
+/* Once the user commits a design (.bg-blackout is set on the scene at
+   that moment), fade the white mockup panel out alongside the backdrop
+   blackout so the stage is fully cleared before the final door rises.
+   Matches the 4s bg-fade-to-black timing. */
+#scene-level3.bg-blackout .mockup {
+  animation: mockupFadeOut 4s ease forwards;
+}
+@keyframes mockupFadeOut {
+  0%   { opacity: 1; }
+  100% { opacity: 0; }
+}
 .mockup .commslot {
   width: 70%;
   aspect-ratio: 1;
